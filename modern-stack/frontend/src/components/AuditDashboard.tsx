@@ -106,11 +106,6 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
     return { totalVisits, uniqueIPs: uniqueIPs.size, trendArray, maxCount };
   }, [auditLogs]);
 
-  const entityLogs = useMemo(() => {
-    if (!selectedEntityId) return [];
-    return auditLogs.filter(log => log.userId === selectedEntityId).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [auditLogs, selectedEntityId]);
-
 
   // --- NAVIGATION ---
   const openCategory = (cat: string) => {
@@ -276,29 +271,58 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
     );
   };
 
-  const renderTimelineSection = (title: string, icon: string, filterKeywords: string[]) => {
-    const logs = entityLogs.filter(log => {
+  const getLogsForActions = (actions: string[]) => {
+    const entityLogs = auditLogs.filter(l => l.userId === selectedEntityId);
+    return entityLogs.filter(log => {
       const details = log.details || '';
-      return filterKeywords.some(kw => log.action.toUpperCase().includes(kw) || details.toUpperCase().includes(kw));
+      return actions.some(kw => log.action.toUpperCase().includes(kw) || details.toUpperCase().includes(kw));
     });
+  };
+
+  const renderActivityGrid = (title: string, actions: string[]) => {
+    const logs = getLogsForActions(actions);
     if (logs.length === 0) return null;
 
     return (
-      <div style={{ marginBottom: 32 }}>
-        <h3 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span>{icon}</span> {title}
-        </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, borderLeft: '2px solid rgba(255,255,255,0.1)', paddingLeft: 20, marginLeft: 10 }}>
+      <div style={{ marginBottom: 40 }}>
+        <h3 style={{ fontSize: 18, fontWeight: 800, textTransform: 'uppercase', marginBottom: 20, borderLeft: '4px solid var(--accent-blue)', paddingLeft: 12, color: '#fff' }}>{title}</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
           {logs.map(log => (
-            <div key={log.id} style={{ position: 'relative' }}>
-              <div style={{ position: 'absolute', left: -26, top: 6, width: 10, height: 10, borderRadius: '50%', background: 'var(--accent-blue)', boxShadow: '0 0 10px var(--accent-blue)' }} />
-              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.03)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent-cyan)', letterSpacing: 0.5 }}>{log.action}</span>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{new Date(log.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</span>
-                </div>
-                <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{log.details}</p>
-              </div>
+            <div key={log.id} style={{ background: '#fff', borderRadius: 16, padding: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, alignItems: 'center' }}>
+                 <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: 1, background: 'rgba(99,102,241,0.1)', padding: '4px 8px', borderRadius: 4 }}>{log.action}</span>
+                 <span style={{ fontSize: 10, color: '#666', fontWeight: 600 }}>{new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+               </div>
+               <p style={{ fontSize: 14, fontWeight: 700, color: '#111', marginBottom: 8 }}>{log.details || 'System Action'}</p>
+               <p style={{ fontSize: 11, color: '#888', fontWeight: 600 }}>{new Date(log.timestamp).toLocaleDateString()}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderProvenanceSidebar = (title: string, actions: string[]) => {
+    const logs = getLogsForActions(actions);
+    
+    return (
+      <div style={{ background: '#0B0F19', borderRadius: 24, padding: 30, height: '100%', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <h3 style={{ fontSize: 14, fontWeight: 800, textTransform: 'uppercase', marginBottom: 30, letterSpacing: 2, color: '#fff', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span>⏱️</span> {title}
+        </h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {logs.length === 0 ? <p style={{ opacity: 0.5, fontSize: 13, color: '#fff' }}>No logs available.</p> : logs.map((log, index) => (
+            <div key={log.id} style={{ position: 'relative', paddingLeft: 24 }}>
+               {index !== logs.length - 1 && <div style={{ position: 'absolute', left: 4, top: 12, bottom: -24, width: 2, background: 'rgba(255,255,255,0.1)' }} />}
+               <div style={{ position: 'absolute', left: -1, top: 4, width: 12, height: 12, borderRadius: '50%', background: 'var(--accent-blue)', boxShadow: '0 0 12px var(--accent-blue)' }} />
+               
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                 <span style={{ fontSize: 11, fontWeight: 800, color: '#888' }}>{new Date(log.timestamp).toLocaleString()}</span>
+                 <span style={{ fontSize: 9, background: 'var(--accent-blue)', color: '#fff', padding: '2px 6px', borderRadius: 4, fontWeight: 800 }}>{log.action}</span>
+               </div>
+               <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', padding: 16, borderRadius: 12, marginTop: 8 }}>
+                 <p style={{ fontSize: 13, color: '#ddd', margin: 0, lineHeight: 1.5 }}>{log.details || 'Activity recorded'}</p>
+               </div>
             </div>
           ))}
         </div>
@@ -312,62 +336,66 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
     return (
       <div style={{ animation: 'fadeScale 0.5s ease-out forwards' }}>
         <button onClick={goBack} className="btn btn-ghost" style={{ marginBottom: 24, padding: '8px 16px', background: 'rgba(255,255,255,0.05)' }}>
-          ← Back to List
+          ← Back to Directory
         </button>
-        
-        <div className="glass-card-static" style={{ padding: 40, borderRadius: 24, marginBottom: 30 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-            <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 800, color: '#fff', boxShadow: '0 10px 20px rgba(0,0,0,0.3)' }}>
-              {entity?.firstName?.charAt(0) || entity?.email?.charAt(0)?.toUpperCase() || '?'}
-            </div>
-            <div>
-              <h2 style={{ fontSize: 32, fontWeight: 900, color: '#fff', marginBottom: 4 }}>{entity?.firstName} {entity?.lastName}</h2>
-              <p style={{ fontSize: 16, color: 'var(--accent-cyan)', fontWeight: 600, marginBottom: 4 }}>{entity?.role.toUpperCase()} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>• {entity?.email}</span></p>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'monospace' }}>ID: {selectedEntityId}</p>
-            </div>
+
+        {/* HEADER BLOCK (IDENTITY FORENSIC NODE STYLE) */}
+        <div style={{ background: '#5B42F3', borderRadius: 24, padding: '40px 50px', marginBottom: 40, position: 'relative', overflow: 'hidden', boxShadow: '0 10px 40px rgba(91,66,243,0.3)' }}>
+          <div style={{ position: 'absolute', top: -50, right: -50, width: 300, height: 300, background: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(40px)' }} />
+          
+          <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.2)', padding: '6px 16px', borderRadius: 20, fontSize: 11, fontWeight: 800, letterSpacing: 2, color: '#fff', marginBottom: 20 }}>
+            {selectedEntityRole.toUpperCase()} FORENSIC NODE
+          </div>
+          
+          <h1 style={{ fontSize: 48, fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '-1px', margin: '0 0 10px 0' }}>
+            {entity ? `${entity.firstName} ${entity.lastName}` : 'UNKNOWN ENTITY'}
+          </h1>
+          
+          <div style={{ display: 'flex', gap: 20, fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>
+            <span>{entity?.phone || 'NO PHONE'}</span>
+            <span>•</span>
+            <span>{entity?.email || 'NO EMAIL'}</span>
+            <span>•</span>
+            <span>REGISTERED {entity?.createdAt ? new Date(entity.createdAt).toLocaleDateString() : 'UNKNOWN'}</span>
           </div>
         </div>
 
-        <div className="glass-card-static" style={{ padding: 40, borderRadius: 24 }}>
-          {selectedEntityRole === 'client' && (
-            <>
-              {renderTimelineSection('Booking History', '📅', ['BOOKING'])}
-              {renderTimelineSection('Authentication', '🔐', ['LOGIN', 'LOGOUT', 'REGISTER', 'SIGNIN'])}
-              {renderTimelineSection('Profile Updates', '📝', ['PROFILE'])}
-              {renderTimelineSection('Reviews & Feedback', '⭐', ['REVIEW', 'COMPLAINT'])}
-            </>
-          )}
+        {/* SPLIT LAYOUT GRID */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 40, alignItems: 'start' }}>
+          
+          {/* LEFT: ACTIVITY GRID */}
+          <div>
+            {selectedEntityRole === 'client' && (
+              <>
+                {renderActivityGrid('Historical Booking Timeline', ['BOOKING'])}
+                {renderActivityGrid('Reviews & Complaints Filed', ['REVIEW', 'COMPLAINT'])}
+              </>
+            )}
+            
+            {selectedEntityRole === 'caregiver' && (
+              <>
+                {renderActivityGrid('Booking Acceptances', ['BOOKING'])}
+                {renderActivityGrid('Admin Approvals Received', ['APPROVAL'])}
+              </>
+            )}
+            
+            {selectedEntityRole === 'admin' && (
+              <>
+                {renderActivityGrid('System Interventions', ['DELETED', 'APPROVED', 'UPDATED'])}
+              </>
+            )}
 
-          {selectedEntityRole === 'caregiver' && (
-            <>
-              {renderTimelineSection('Admin Approvals', '✅', ['APPROVED', 'REJECTED'])}
-              {renderTimelineSection('Booking Acceptances', '🤝', ['BOOKING_ACCEPTED', 'BOOKING'])}
-              {renderTimelineSection('Authentication', '🔐', ['LOGIN', 'LOGOUT', 'REGISTER', 'SIGNIN'])}
-              {renderTimelineSection('Profile & Details', '📝', ['PROFILE'])}
-            </>
-          )}
+            {(!selectedEntityRole || selectedEntityRole === 'Unknown') && (
+               renderActivityGrid('All Activity', [''])
+            )}
+          </div>
 
-          {selectedEntityRole === 'admin' && (
-            <>
-              {renderTimelineSection('Actions Taken', '⚖️', ['DELETED', 'APPROVED', 'REPLIED', 'BOOKING_APPROVE', 'BOOKING_REJECT'])}
-              {renderTimelineSection('Authentication', '🔐', ['LOGIN', 'LOGOUT', 'REGISTER', 'SIGNIN'])}
-              {renderTimelineSection('System Changes', '⚙️', ['SETTINGS', 'CONFIG'])}
-            </>
-          )}
-
-          {(!selectedEntityRole || selectedEntityRole === 'Unknown') && (
-             <>
-               {renderTimelineSection('All Actions', '📝', [''])}
-             </>
-          )}
-
-          {entityLogs.length === 0 && (
-            <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
-              <span style={{ fontSize: 40, display: 'block', marginBottom: 16 }}>📭</span>
-              <p>No historical events recorded for this user.</p>
-            </div>
-          )}
+          {/* RIGHT: PROVENANCE LOGS */}
+          <div>
+            {renderProvenanceSidebar('Provenance Logs', ['LOGIN', 'LOGOUT', 'REGISTER', 'SIGNIN', 'PROFILE'])}
+          </div>
         </div>
+
       </div>
     );
   };
