@@ -37,7 +37,7 @@ export const register = async (req: Request, res: Response) => {
       }
     });
 
-    // Create Profile
+    // Create Profile — Caregivers start as inactive until admin approves
     await prisma.profile.create({
       data: {
         userId: user.id,
@@ -47,7 +47,7 @@ export const register = async (req: Request, res: Response) => {
         experienceYears: experienceYears ? parseInt(String(experienceYears)) : null,
         presentAddress: presentAddress || null,
         permanentAddress: permanentAddress || null,
-        isActive: true,
+        isActive: role !== 'caregiver', // false for caregivers → requires admin approval
       }
     });
 
