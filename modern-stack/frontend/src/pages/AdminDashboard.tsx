@@ -14,6 +14,8 @@ export default function AdminDashboard() {
   const [complaints, setComplaints] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [replyText, setReplyText] = useState<Record<string, string>>({});
+  const [animationKey, setAnimationKey] = useState(0);
+
   const navigate = useNavigate();
   const { showSuccess, showError, showConfirm } = useModal();
 
@@ -23,6 +25,17 @@ export default function AdminDashboard() {
     loadStats();
   }, []);
 
+  const changeTab = (newTab: Tab) => {
+    setTab(newTab);
+    setAnimationKey(prev => prev + 1);
+    if (newTab === 'users') loadUsers();
+    if (newTab === 'caregivers') loadPendingCaregivers();
+    if (newTab === 'bookings') loadPendingBookings();
+    if (newTab === 'complaints') loadComplaints();
+    if (newTab === 'audit') loadAuditLogs();
+    if (newTab === 'dashboard') loadStats();
+  };
+
   const loadStats = async () => { try { setStats(await api.get('/admin/stats')); } catch {} };
   const loadUsers = async () => { try { setUsers(await api.get('/admin/users')); } catch {} };
   const loadPendingCaregivers = async () => { try { setPendingCaregivers(await api.get('/admin/pending-caregivers')); } catch {} };
@@ -31,18 +44,21 @@ export default function AdminDashboard() {
   const loadAuditLogs = async () => { try { setAuditLogs(await api.get('/admin/audit-logs')); } catch {} };
 
   const handleDeleteUser = (id: string, email: string) => {
-    showConfirm('Delete User', `Permanently delete user "${email}"? This cannot be undone.`, async () => {
-      try { await api.del(`/admin/users/${id}`); showSuccess('Deleted', 'User removed from the system.'); loadUsers(); loadStats(); } catch (e: any) { showError('Error', e.message); }
+    showConfirm('Delete User', `Permanently delete "${email}"? This cannot be undone.`, async () => {
+      try { await api.del(`/admin/users/${id}`); showSuccess('Deleted', 'User removed.'); loadUsers(); loadStats(); }
+      catch (e: any) { showError('Error', e.message); }
     });
   };
 
   const handleApproveCaregiver = async (profileId: string) => {
-    try { await api.put(`/admin/approve/${profileId}`); showSuccess('Approved', 'Caregiver activated.'); loadPendingCaregivers(); } catch (e: any) { showError('Error', e.message); }
+    try { await api.put(`/admin/approve/${profileId}`); showSuccess('Approved', 'Caregiver activated.'); loadPendingCaregivers(); }
+    catch (e: any) { showError('Error', e.message); }
   };
 
   const handleBookingAction = (bookingId: string, action: string) => {
-    showConfirm(`${action === 'approve' ? 'Approve' : 'Reject'} Booking`, `Are you sure you want to ${action} this booking?`, async () => {
-      try { await api.post(`/admin/requests/${bookingId}/${action}`); showSuccess('Done', `Booking ${action}d.`); loadPendingBookings(); } catch (e: any) { showError('Error', e.message); }
+    showConfirm(`${action === 'approve' ? 'Approve' : 'Reject'} Booking`, `Are you sure?`, async () => {
+      try { await api.post(`/admin/requests/${bookingId}/${action}`); showSuccess('Done', `Booking ${action}d.`); loadPendingBookings(); }
+      catch (e: any) { showError('Error', e.message); }
     });
   };
 
@@ -51,7 +67,7 @@ export default function AdminDashboard() {
     if (!reply?.trim()) return showError('Empty Reply', 'Please type a reply first.');
     try {
       await api.put(`/admin/complaints/${id}/reply`, { reply });
-      showSuccess('Replied', 'Your reply has been sent to the client.');
+      showSuccess('Replied', 'Your reply has been sent.');
       setReplyText(prev => ({ ...prev, [id]: '' }));
       loadComplaints();
     } catch (e: any) { showError('Error', e.message); }
@@ -65,12 +81,12 @@ export default function AdminDashboard() {
   };
 
   const sidebarItems: { key: Tab; icon: string; label: string }[] = [
-    { key: 'dashboard', icon: '📊', label: 'Dashboard' },
-    { key: 'users', icon: '👥', label: 'Manage Users' },
+    { key: 'dashboard',  icon: '📊', label: 'Platform Overview' },
+    { key: 'users',      icon: '👥', label: 'Manage Users' },
     { key: 'caregivers', icon: '🩺', label: 'Caregiver Approvals' },
-    { key: 'bookings', icon: '📅', label: 'Booking Approvals' },
-    { key: 'complaints', icon: '📝', label: 'Complaints' },
-    { key: 'audit', icon: '🔍', label: 'Activity Log' },
+    { key: 'bookings',   icon: '📅', label: 'Booking Approvals' },
+    { key: 'complaints', icon: '📝', label: 'Complaints Portal' },
+    { key: 'audit',      icon: '🔍', label: 'Security Audit Log' },
   ];
 
   const getBadgeClass = (status: string) => {
@@ -82,182 +98,262 @@ export default function AdminDashboard() {
   };
 
   const getActionColor = (action: string) => {
-    if (action.includes('LOGIN')) return 'var(--accent-green)';
-    if (action.includes('LOGOUT')) return 'var(--accent-amber)';
-    if (action.includes('DELETE')) return 'var(--accent-red)';
-    if (action.includes('APPROVED') || action.includes('REGISTER')) return 'var(--accent-cyan)';
-    return 'var(--accent-blue)';
+    if (action.includes('LOGIN')) return { color: 'var(--accent-green)', bg: 'rgba(16,185,129,0.1)' };
+    if (action.includes('LOGOUT')) return { color: 'var(--accent-amber)', bg: 'rgba(245,158,11,0.1)' };
+    if (action.includes('DELETE')) return { color: 'var(--accent-red)', bg: 'rgba(239,68,68,0.1)' };
+    if (action.includes('APPROVED') || action.includes('REGISTER')) return { color: 'var(--accent-cyan)', bg: 'rgba(6,182,212,0.1)' };
+    return { color: 'var(--accent-blue)', bg: 'rgba(59,130,246,0.1)' };
   };
 
+  const statItems = [
+    { value: stats.totalUsers || 0, label: 'Total Users', icon: '👥', color: '#3b82f6' },
+    { value: stats.totalCaregivers || 0, label: 'Caregivers', icon: '🩺', color: '#10b981' },
+    { value: stats.totalBookings || 0, label: 'Total Bookings', icon: '📅', color: '#8b5cf6' },
+    { value: stats.totalComplaints || 0, label: 'Complaints', icon: '📝', color: '#f59e0b' },
+  ];
+
   return (
-    <div className="page-container">
-      <aside className="sidebar">
-        <div className="sidebar-logo">🛡️ Admin Panel</div>
+    <div className="page-container fade-in">
+      {/* SIDEBAR */}
+      <aside className="sidebar" style={{ width: 300 }}>
+        <div className="sidebar-logo">🛡️ <span>Admin Center</span></div>
         <nav className="sidebar-nav">
           {sidebarItems.map(item => (
-            <div key={item.key} className={`sidebar-item ${tab === item.key ? 'active' : ''}`}
-              onClick={() => {
-                setTab(item.key);
-                if (item.key === 'users') loadUsers();
-                if (item.key === 'caregivers') loadPendingCaregivers();
-                if (item.key === 'bookings') loadPendingBookings();
-                if (item.key === 'complaints') loadComplaints();
-                if (item.key === 'audit') loadAuditLogs();
-                if (item.key === 'dashboard') loadStats();
-              }}>
-              <span>{item.icon}</span> {item.label}
+            <div key={item.key} className={`sidebar-item ${tab === item.key ? 'active' : ''}`} onClick={() => changeTab(item.key)}>
+              <span>{item.icon}</span>
+              <div className="sidebar-item-label">{item.label}</div>
             </div>
           ))}
         </nav>
-        <div style={{ padding: '16px 12px' }}><button className="btn btn-ghost" style={{ width: '100%' }} onClick={handleLogout}>🚪 Sign Out</button></div>
+        <div style={{ paddingTop: 16, borderTop: '1px solid var(--border-glass)' }}>
+          <div style={{ padding: '10px 14px', marginBottom: 12, borderRadius: 14, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
+            <div style={{ fontSize: 11, color: 'var(--accent-red)', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 2 }}>Administrator</div>
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Full platform access</div>
+          </div>
+          <button className="btn btn-ghost" style={{ width: '100%', borderRadius: 14, border: '1px solid rgba(239,68,68,0.25)', color: '#fca5a5' }} onClick={handleLogout}>🚪 Secure Sign Out</button>
+        </div>
       </aside>
 
-      <main className="main-content fade-in">
-        {/* DASHBOARD */}
-        {tab === 'dashboard' && (
-          <>
-            <div className="page-header"><h1>System Overview</h1><p>Real-time platform statistics</p></div>
-            <div className="stats-grid stagger">
-              <div className="glass-card stat-card"><div className="stat-value">{stats.totalUsers || 0}</div><div className="stat-label">Total Users</div></div>
-              <div className="glass-card stat-card"><div className="stat-value">{stats.totalCaregivers || 0}</div><div className="stat-label">Caregivers</div></div>
-              <div className="glass-card stat-card"><div className="stat-value">{stats.totalBookings || 0}</div><div className="stat-label">Total Bookings</div></div>
-              <div className="glass-card stat-card"><div className="stat-value">{stats.totalComplaints || 0}</div><div className="stat-label">Complaints</div></div>
-            </div>
-          </>
-        )}
+      {/* MAIN */}
+      <main className="main-content" style={{ marginLeft: 300 }} key={animationKey}>
+        <div className="tab-transition">
 
-        {/* MANAGE USERS */}
-        {tab === 'users' && (
-          <>
-            <div className="page-header"><h1>Manage Users</h1><p>View and manage all registered users</p></div>
-            <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-              <table className="glass-table">
-                <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Action</th></tr></thead>
-                <tbody>
-                  {users.map((u: any) => (
-                    <tr key={u.userId}>
-                      <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{u.firstName} {u.lastName}</td>
-                      <td>{u.email}</td>
-                      <td><span className={`badge ${u.role === 'admin' ? 'badge-reviewed' : u.role === 'caregiver' ? 'badge-approved' : 'badge-pending'}`}>{u.role}</span></td>
-                      <td>
-                        {u.role !== 'admin' && (
-                          <button className="btn btn-danger btn-sm" onClick={() => handleDeleteUser(u.userId, u.email)}>Delete</button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-
-        {/* CAREGIVER APPROVALS */}
-        {tab === 'caregivers' && (
-          <>
-            <div className="page-header"><h1>Caregiver Approvals</h1><p>Pending caregiver registrations</p></div>
-            <div className="stagger" style={{ display: 'grid', gap: 16 }}>
-              {pendingCaregivers.map((c: any) => (
-                <div key={c.profileId} className="glass-card" style={{ padding: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <h3 style={{ fontWeight: 700 }}>{c.firstName} {c.lastName}</h3>
-                    <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>✉️ {c.email} · 🔧 {c.profession || 'N/A'} · ⏱️ {c.experienceYears || 0} yrs</p>
+          {/* OVERVIEW */}
+          {tab === 'dashboard' && (
+            <>
+              <div className="page-header">
+                <h1>System Overview</h1>
+                <p>Real-time platform statistics and health metrics.</p>
+              </div>
+              <div className="stats-grid stagger">
+                {statItems.map((s, i) => (
+                  <div key={i} className="stat-card glass-card" style={{ borderTop: `3px solid ${s.color}22` }}>
+                    <div className="stat-value" style={{ color: s.color }}>{s.value}</div>
+                    <div className="stat-label">{s.label}</div>
+                    <div style={{ position: 'absolute', right: 20, top: 20, fontSize: 36, opacity: 0.12 }}>{s.icon}</div>
+                    <div style={{ position: 'absolute', top: -40, right: -40, width: 100, height: 100, background: s.color, filter: 'blur(50px)', opacity: 0.15, borderRadius: '50%' }} />
                   </div>
-                  <button className="btn btn-success btn-sm" onClick={() => handleApproveCaregiver(c.profileId)}>✓ Approve</button>
-                </div>
-              ))}
-              {pendingCaregivers.length === 0 && <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 40 }}>No pending approvals</p>}
-            </div>
-          </>
-        )}
+                ))}
+              </div>
+            </>
+          )}
 
-        {/* BOOKING APPROVALS */}
-        {tab === 'bookings' && (
-          <>
-            <div className="page-header"><h1>Booking Approvals</h1><p>Review and approve booking requests</p></div>
-            <div className="stagger" style={{ display: 'grid', gap: 16 }}>
-              {pendingBookings.map((b: any) => (
-                <div key={b.bookingId} className="glass-card" style={{ padding: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <h3 style={{ fontWeight: 700 }}>{b.clientName} → {b.caregiverName}</h3>
-                    <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>📅 {new Date(b.serviceDate).toLocaleString()}</p>
-                    <span className={getBadgeClass(b.status)}>{b.status}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn btn-success btn-sm" onClick={() => handleBookingAction(b.bookingId, 'approve')}>✓ Approve</button>
-                    <button className="btn btn-danger btn-sm" onClick={() => handleBookingAction(b.bookingId, 'reject')}>✕ Reject</button>
-                  </div>
-                </div>
-              ))}
-              {pendingBookings.length === 0 && <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 40 }}>No pending bookings</p>}
-            </div>
-          </>
-        )}
+          {/* MANAGE USERS */}
+          {tab === 'users' && (
+            <>
+              <div className="page-header">
+                <h1>Manage Users</h1>
+                <p>View and manage all registered accounts on the platform.</p>
+              </div>
+              <div className="glass-table-container">
+                <table className="glass-table">
+                  <thead><tr><th>Full Name</th><th>Email Address</th><th>System Role</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    {users.map((u: any) => (
+                      <tr key={u.userId}>
+                        <td style={{ fontWeight: 700, color: '#fff' }}>{u.firstName} {u.lastName}</td>
+                        <td style={{ color: 'var(--text-secondary)' }}>{u.email}</td>
+                        <td>
+                          <span className={`badge ${u.role === 'admin' ? 'badge-reviewed' : u.role === 'caregiver' ? 'badge-approved' : 'badge-pending'}`}>
+                            {u.role}
+                          </span>
+                        </td>
+                        <td>
+                          {u.role !== 'admin' && (
+                            <button className="btn btn-danger btn-sm" onClick={() => handleDeleteUser(u.userId, u.email)}>🗑️ Delete</button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {users.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>No users found.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
 
-        {/* COMPLAINTS */}
-        {tab === 'complaints' && (
-          <>
-            <div className="page-header"><h1>Complaints Management</h1><p>Review and respond to user complaints</p></div>
-            <div className="stagger" style={{ display: 'grid', gap: 16 }}>
-              {complaints.map((c: any) => (
-                <div key={c.id} className="glass-card" style={{ padding: 24 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <div>
-                      <h3 style={{ fontWeight: 700 }}>Complaint #{String(c.id).slice(0, 8)}</h3>
-                      <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-                        Client: <span style={{ color: 'var(--accent-cyan)' }}>{c.clientName}</span> ({c.clientEmail}) →
-                        Caregiver: <span style={{ color: 'var(--accent-purple)' }}>{c.caregiverName}</span>
-                      </p>
+          {/* CAREGIVER APPROVALS */}
+          {tab === 'caregivers' && (
+            <>
+              <div className="page-header">
+                <h1>Caregiver Approvals</h1>
+                <p>Review and verify pending professional caregiver registrations.</p>
+              </div>
+              <div className="stagger" style={{ display: 'grid', gap: 20 }}>
+                {pendingCaregivers.map((c: any) => (
+                  <div key={c.profileId} className="glass-card" style={{ padding: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
+                    <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
+                      <div style={{ width: 60, height: 60, borderRadius: 20, background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, flexShrink: 0 }}>
+                        {c.firstName?.[0] || '👩‍⚕️'}
+                      </div>
+                      <div>
+                        <h3 style={{ fontWeight: 800, fontSize: 20, marginBottom: 6 }}>{c.firstName} {c.lastName}</h3>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
+                          <span style={{ color: 'var(--accent-cyan)' }}>{c.email}</span>
+                          {' · '}{c.profession || 'N/A'}
+                          {' · '}{c.experienceYears || 0} yrs exp.
+                        </p>
+                      </div>
                     </div>
-                    <span className={getBadgeClass(c.status)}>{c.status}</span>
+                    <button className="btn btn-success btn-lg" onClick={() => handleApproveCaregiver(c.profileId)}>✓ Approve Profile</button>
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 16, marginBottom: 12, border: '1px solid var(--border-glass)' }}>
-                    <p style={{ fontSize: 14, lineHeight: 1.6 }}>{c.description}</p>
+                ))}
+                {pendingCaregivers.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: 80, background: 'rgba(255,255,255,0.02)', borderRadius: 22, border: '1px dashed var(--border-glass-strong)' }}>
+                    <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>🎉</span>
+                    <h3 style={{ fontWeight: 800, fontSize: 22, marginBottom: 8 }}>All clear!</h3>
+                    <p style={{ color: 'var(--text-muted)' }}>No pending caregiver approvals right now.</p>
                   </div>
-                  {c.adminReply ? (
-                    <div style={{ background: 'rgba(16,185,129,0.05)', borderRadius: 12, padding: 16, border: '1px solid rgba(16,185,129,0.2)' }}>
-                      <p style={{ fontSize: 12, color: 'var(--accent-green)', fontWeight: 600, marginBottom: 4 }}>ADMIN REPLY</p>
-                      <p style={{ fontSize: 14 }}>{c.adminReply}</p>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', gap: 12 }}>
-                      <input className="input-glass" placeholder="Type your reply..." value={replyText[c.id] || ''} onChange={e => setReplyText(prev => ({ ...prev, [c.id]: e.target.value }))} style={{ flex: 1 }} />
-                      <button className="btn btn-primary btn-sm" onClick={() => handleReplyComplaint(c.id)}>Reply</button>
-                    </div>
-                  )}
-                </div>
-              ))}
-              {complaints.length === 0 && <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 40 }}>No complaints</p>}
-            </div>
-          </>
-        )}
+                )}
+              </div>
+            </>
+          )}
 
-        {/* AUDIT LOG — Activity Trail */}
-        {tab === 'audit' && (
-          <>
-            <div className="page-header"><h1>Activity Log</h1><p>Complete audit trail of all system actions</p></div>
-            <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-              <table className="glass-table">
-                <thead><tr><th>Time</th><th>Action</th><th>User</th><th>Details</th></tr></thead>
-                <tbody>
-                  {auditLogs.map((log: any) => (
-                    <tr key={log.id}>
-                      <td style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{new Date(log.timestamp).toLocaleString()}</td>
-                      <td>
-                        <span style={{ color: getActionColor(log.action), fontWeight: 700, fontSize: 13, fontFamily: 'monospace' }}>
-                          {log.action}
-                        </span>
-                      </td>
-                      <td style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{log.user?.email || 'System'}</td>
-                      <td style={{ fontSize: 13, maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis' }}>{log.details || '—'}</td>
-                    </tr>
-                  ))}
-                  {auditLogs.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>No activity logged yet</td></tr>}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+          {/* BOOKING APPROVALS */}
+          {tab === 'bookings' && (
+            <>
+              <div className="page-header">
+                <h1>Booking Approvals</h1>
+                <p>Review booking matches between clients and caregivers.</p>
+              </div>
+              <div className="stagger" style={{ display: 'grid', gap: 20 }}>
+                {pendingBookings.map((b: any) => (
+                  <div key={b.bookingId} className="glass-card" style={{ padding: 28 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                          <h3 style={{ fontWeight: 800, fontSize: 19, color: 'var(--accent-cyan)' }}>{b.clientName}</h3>
+                          <span style={{ color: 'var(--text-muted)', fontSize: 18 }}>→</span>
+                          <h3 style={{ fontWeight: 800, fontSize: 19, color: 'var(--accent-purple)' }}>{b.caregiverName}</h3>
+                        </div>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 10 }}>
+                          📅 {new Date(b.serviceDate).toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' })}
+                        </p>
+                        <span className={getBadgeClass(b.status)}>{b.status}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 12 }}>
+                        <button className="btn btn-success" onClick={() => handleBookingAction(b.bookingId, 'approve')}>✓ Approve</button>
+                        <button className="btn btn-danger" onClick={() => handleBookingAction(b.bookingId, 'reject')}>✕ Reject</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {pendingBookings.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: 80, background: 'rgba(255,255,255,0.02)', borderRadius: 22, border: '1px dashed var(--border-glass-strong)' }}>
+                    <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>✅</span>
+                    <h3 style={{ fontWeight: 800, fontSize: 22, marginBottom: 8 }}>Queue is empty</h3>
+                    <p style={{ color: 'var(--text-muted)' }}>No pending booking approvals.</p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* COMPLAINTS */}
+          {tab === 'complaints' && (
+            <>
+              <div className="page-header">
+                <h1>Complaints Management</h1>
+                <p>Resolve disputes and answer client concerns to maintain platform quality.</p>
+              </div>
+              <div className="stagger" style={{ display: 'grid', gap: 22 }}>
+                {complaints.map((c: any) => (
+                  <div key={c.id} className="glass-card-static" style={{ padding: 30, borderRadius: 22 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
+                      <div>
+                        <h3 style={{ fontWeight: 800, fontSize: 19, marginBottom: 6 }}>Ticket #{String(c.id).slice(0, 8)}</h3>
+                        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+                          Filed by <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{c.clientName}</span>
+                          {' against '}
+                          <span style={{ color: 'var(--accent-purple)', fontWeight: 600 }}>{c.caregiverName}</span>
+                        </p>
+                      </div>
+                      <span className={getBadgeClass(c.status)}>{c.status}</span>
+                    </div>
+                    <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 14, padding: 18, marginBottom: 18, border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <strong style={{ color: 'var(--text-muted)', display: 'block', marginBottom: 8, fontSize: 11, letterSpacing: '1px', textTransform: 'uppercase' }}>Complaint:</strong>
+                      <p style={{ fontSize: 15, lineHeight: 1.65, color: '#fff' }}>"{c.description}"</p>
+                    </div>
+                    {c.adminReply ? (
+                      <div style={{ background: 'rgba(16,185,129,0.06)', borderRadius: 14, padding: 18, border: '1px solid rgba(16,185,129,0.2)' }}>
+                        <p style={{ fontSize: 11, color: 'var(--accent-green)', fontWeight: 800, marginBottom: 8, letterSpacing: 1, textTransform: 'uppercase' }}>Your Resolution:</p>
+                        <p style={{ fontSize: 15, color: '#fff', lineHeight: 1.6 }}>{c.adminReply}</p>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: 14 }}>
+                        <input className="input-glass" placeholder="Type your official resolution…" value={replyText[c.id] || ''} onChange={e => setReplyText(prev => ({ ...prev, [c.id]: e.target.value }))} style={{ flex: 1 }} />
+                        <button className="btn btn-primary" onClick={() => handleReplyComplaint(c.id)}>Send ✉️</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {complaints.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: 80, background: 'rgba(255,255,255,0.02)', borderRadius: 22, border: '1px dashed var(--border-glass-strong)' }}>
+                    <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>🕊️</span>
+                    <h3 style={{ fontWeight: 800, fontSize: 22, marginBottom: 8 }}>Peace and Quiet</h3>
+                    <p style={{ color: 'var(--text-muted)' }}>No complaints have been filed recently.</p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* AUDIT LOG */}
+          {tab === 'audit' && (
+            <>
+              <div className="page-header">
+                <h1>Security Audit Log</h1>
+                <p>Complete historical trail of all significant system actions.</p>
+              </div>
+              <div className="glass-table-container">
+                <table className="glass-table">
+                  <thead><tr><th>Timestamp</th><th>System Action</th><th>User Identity</th><th>Details</th></tr></thead>
+                  <tbody>
+                    {auditLogs.map((log: any) => {
+                      const ac = getActionColor(log.action);
+                      return (
+                        <tr key={log.id}>
+                          <td style={{ fontSize: 13, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                            {new Date(log.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'medium' })}
+                          </td>
+                          <td>
+                            <span style={{ color: ac.color, background: ac.bg, padding: '4px 10px', borderRadius: 8, fontWeight: 800, fontSize: 12, letterSpacing: '0.8px', whiteSpace: 'nowrap' }}>
+                              {log.action}
+                            </span>
+                          </td>
+                          <td style={{ color: '#fff', fontWeight: 600 }}>{log.user?.email || 'SYSTEM'}</td>
+                          <td style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 360 }}>{log.details || '—'}</td>
+                        </tr>
+                      );
+                    })}
+                    {auditLogs.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>No activity logged yet.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+        </div>
       </main>
     </div>
   );

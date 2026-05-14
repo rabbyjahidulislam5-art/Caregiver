@@ -6,20 +6,26 @@ import ClientDashboard from './pages/ClientDashboard';
 import CaregiverDashboard from './pages/CaregiverDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Landing from './pages/Landing';
+import Footer from './components/Footer';
 
 function App() {
   return (
     <ModalProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/client" element={<ClientDashboard />} />
-          <Route path="/caregiver" element={<CaregiverDashboard />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/client" element={<ClientDashboard />} />
+              <Route path="/caregiver" element={<CaregiverDashboard />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
+          <Footer />
+        </div>
       </BrowserRouter>
     </ModalProvider>
   );
