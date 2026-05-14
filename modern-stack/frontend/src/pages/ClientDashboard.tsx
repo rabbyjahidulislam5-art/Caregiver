@@ -51,6 +51,21 @@ export default function ClientDashboard() {
       });
     } catch {}
   };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        return showError('File too large', 'Please upload an image smaller than 2MB');
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditForm(prev => ({ ...prev, profilePictureUrl: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const loadActiveBookings = async () => { try { setActiveBookings(await api.get(`/bookings/active/${userId}`)); } catch {} };
   const loadHistory = async () => { try { setHistoryBookings(await api.get(`/bookings/history/${userId}`)); } catch {} };
   const loadComplaints = async () => { try { setComplaints(await api.get(`/complaints/history/${userId}`)); } catch {} };
@@ -445,7 +460,11 @@ export default function ClientDashboard() {
 
                 <div className="form-group" style={{ marginTop: 18 }}>
                   <label className="form-label">Profile Picture URL</label>
-                  <input className="input-glass" value={editForm.profilePictureUrl} onChange={e => setEditForm(p => ({ ...p, profilePictureUrl: e.target.value }))} placeholder="https://example.com/image.jpg" />
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <input className="input-glass" value={editForm.profilePictureUrl} onChange={e => setEditForm(p => ({ ...p, profilePictureUrl: e.target.value }))} placeholder="https://example.com/image.jpg" style={{ flex: 1 }} />
+                    <span style={{ color: 'var(--text-secondary)', fontSize: 14 }}>OR</span>
+                    <input type="file" accept="image/*" onChange={handleImageUpload} className="input-glass" style={{ padding: '8px', flex: 1 }} />
+                  </div>
                 </div>
 
                 <button className="btn btn-primary btn-lg" onClick={handleUpdateProfile} style={{ width: '100%', marginTop: 24 }}>

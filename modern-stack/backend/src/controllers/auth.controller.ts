@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-in-prod';
 // POST /api/auth/register
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password, role, phone, bloodGroup, firstName, lastName, experienceYears, profession, presentAddress, permanentAddress } = req.body;
+    const { email, password, role, phone, bloodGroup, firstName, lastName, experienceYears, profession, presentAddress, permanentAddress, profilePictureUrl } = req.body;
 
     // Validate password strength
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -47,6 +47,7 @@ export const register = async (req: Request, res: Response) => {
         experienceYears: experienceYears ? parseInt(String(experienceYears)) : null,
         presentAddress: presentAddress || null,
         permanentAddress: permanentAddress || null,
+        profilePictureUrl: profilePictureUrl || null,
         isActive: role !== 'caregiver', // false for caregivers → requires admin approval
       }
     });

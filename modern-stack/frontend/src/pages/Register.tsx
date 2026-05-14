@@ -7,7 +7,7 @@ export default function Register() {
   const [form, setForm] = useState({
     email: '', password: '', confirmPassword: '', role: 'client',
     firstName: '', lastName: '', phone: '', bloodGroup: '',
-    profession: '', experienceYears: '', presentAddress: '', permanentAddress: '',
+    profession: '', experienceYears: '', presentAddress: '', permanentAddress: '', profilePictureUrl: ''
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -15,6 +15,20 @@ export default function Register() {
 
   const set = (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [key]: e.target.value }));
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        return showError('File too large', 'Please upload an image smaller than 2MB');
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm(prev => ({ ...prev, profilePictureUrl: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const validatePassword = (pw: string) => {
     if (pw.length < 8) return 'Password must be at least 8 characters';
@@ -129,6 +143,16 @@ export default function Register() {
           <div className="form-group">
             <label className="form-label">Present Address</label>
             <input className="input-glass" placeholder="Your address" value={form.presentAddress} onChange={set('presentAddress')} id="reg-address" />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Profile Picture (Optional)</label>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            {form.profilePictureUrl && (
+              <img src={form.profilePictureUrl} alt="Preview" style={{ width: 48, height: 48, borderRadius: 12, objectFit: 'cover' }} />
+            )}
+            <input type="file" accept="image/*" onChange={handleImageUpload} className="input-glass" style={{ padding: '8px' }} />
           </div>
         </div>
 
