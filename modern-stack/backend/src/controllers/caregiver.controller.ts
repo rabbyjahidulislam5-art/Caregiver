@@ -160,32 +160,43 @@ export const updateProfile = async (req: Request, res: Response) => {
     const { firstName, lastName, profession, experienceYears, address, phone, profilePictureUrl } = req.body;
 
     const profile = await prisma.profile.findUnique({ where: { userId } });
-    if (!profile) return res.status(404).json({ error: 'Profile not found' });
-
-    await prisma.profile.update({
-      where: { userId },
-      data: {
-        ...(firstName !== undefined && { firstName }),
-        ...(lastName !== undefined && { lastName }),
-        ...(profession !== undefined && { profession }),
-        ...(experienceYears !== undefined && experienceYears !== '' && { experienceYears: parseInt(String(experienceYears)) }),
-        ...(address !== undefined && { presentAddress: address }),
-        ...(profilePictureUrl !== undefined && { profilePictureUrl }),
-      }
-    });
-
-    if (phone !== undefined) {
-      await prisma.user.update({ where: { id: userId }, data: { phone } });
-    }
-
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    await prisma.auditLog.create({
-      data: {
-        action: 'PROFILE_UPDATED',
-        userId: userId,
-        details: `User ${user?.email || userId} updated their profile information`
+    if (!profile || !user) return res.status(404).json({ error: 'Profile not found' });
+
+    const changedFields: string[] = [];
+    if (firstName !== undefined && firstName !== profile.firstName) changedFields.push('First Name');
+    if (lastName !== undefined && lastName !== profile.lastName) changedFields.push('Last Name');
+    if (profession !== undefined && profession !== profile.profession) changedFields.push('Profession Category');
+    if (experienceYears !== undefined && experienceYears !== '' && parseInt(String(experienceYears)) !== profile.experienceYears) changedFields.push('Experience Years');
+    if (address !== undefined && address !== profile.presentAddress) changedFields.push('Address');
+    if (phone !== undefined && phone !== user.phone) changedFields.push('Phone Number');
+    if (profilePictureUrl !== undefined && profilePictureUrl !== profile.profilePictureUrl) changedFields.push('Profile Picture');
+
+    if (changedFields.length > 0) {
+      await prisma.profile.update({
+        where: { userId },
+        data: {
+          ...(firstName !== undefined && { firstName }),
+          ...(lastName !== undefined && { lastName }),
+          ...(profession !== undefined && { profession }),
+          ...(experienceYears !== undefined && experienceYears !== '' && { experienceYears: parseInt(String(experienceYears)) }),
+          ...(address !== undefined && { presentAddress: address }),
+          ...(profilePictureUrl !== undefined && { profilePictureUrl }),
+        }
+      });
+
+      if (phone !== undefined && phone !== user.phone) {
+        await prisma.user.update({ where: { id: userId }, data: { phone } });
       }
-    });
+
+      await prisma.auditLog.create({
+        data: {
+          action: 'PROFILE_UPDATED',
+          userId: userId,
+          details: `User ${user.email} updated their: ${changedFields.join(', ')}`
+        }
+      });
+    }
 
     res.json({ message: 'Profile updated successfully!' });
   } catch (error: any) {
