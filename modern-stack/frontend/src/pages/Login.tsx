@@ -14,7 +14,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      const data = await api.post('/login', { email, password });
+      const data = await api.post('/signin', { email, password });
       localStorage.setItem('userId', data.userId);
       localStorage.setItem('role', data.role);
       localStorage.setItem('token', data.token);
