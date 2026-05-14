@@ -48,14 +48,15 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
         }
         
         const entity = deletedMap.get(log.userId)!;
+        const details = log.details || '';
         if (entity.role === 'Unknown') {
-          const det = log.details.toLowerCase();
+          const det = details.toLowerCase();
           if (det.includes('client logged in') || log.action.includes('CLIENT')) entity.role = 'client';
           else if (det.includes('caregiver logged in') || log.action.includes('CAREGIVER')) entity.role = 'caregiver';
           else if (det.includes('admin logged in') || log.action.includes('ADMIN')) entity.role = 'admin';
         }
         if (entity.email === 'Unknown Email') {
-            const emailMatch = log.details.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+            const emailMatch = details.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
             if (emailMatch) entity.email = emailMatch[0];
         }
       }
@@ -82,7 +83,8 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
       const isTraffic = log.action.includes('/signin') || log.action === 'USER_REGISTERED' || log.action.includes('/login') || log.action.includes('/logout');
       if (isTraffic) {
         totalVisits++;
-        const ipMatch = log.details.match(/IP:\s*([^\s,]+)/);
+        const details = log.details || '';
+        const ipMatch = details.match(/IP:\s*([^\s,]+)/);
         if (ipMatch) uniqueIPs.add(ipMatch[1]);
 
         const date = new Date(log.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -215,7 +217,10 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
   };
 
   const renderTimelineSection = (title: string, icon: string, filterKeywords: string[]) => {
-    const logs = entityLogs.filter(log => filterKeywords.some(kw => log.action.toUpperCase().includes(kw) || log.details.toUpperCase().includes(kw)));
+    const logs = entityLogs.filter(log => {
+      const details = log.details || '';
+      return filterKeywords.some(kw => log.action.toUpperCase().includes(kw) || details.toUpperCase().includes(kw));
+    });
     if (logs.length === 0) return null;
 
     return (
