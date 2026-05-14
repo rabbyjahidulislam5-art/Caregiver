@@ -27,17 +27,34 @@ export const getAllUsers = async (req: Request, res: Response) => {
 export const deleteUser = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    // Delete profile first (cascade should handle, but be explicit)
+
+    // Fetch user email for the audit log before they are gone
+    const targetUser = await prisma.user.findUnique({ where: { id } });
+    const userIdentifier = targetUser?.email || id;
+
+    // Manually delete all dependent records to avoid foreign key constraints
     await prisma.profile.deleteMany({ where: { userId: id } });
+    await prisma.booking.deleteMany({ where: { OR: [{ clientId: id }, { caregiverId: id }] } });
+    await prisma.review.deleteMany({ where: { OR: [{ clientId: id }, { caregiverId: id }] } });
+    await prisma.complaint.deleteMany({ where: { OR: [{ clientId: id }, { caregiverId: id }] } });
+    await prisma.schedule.deleteMany({ where: { caregiverId: id } });
+
+    // Finally delete the user. Audit logs will have their userId set to NULL automatically by Prisma (onDelete: SetNull)
     await prisma.user.delete({ where: { id } });
 
+    // Create a NEW audit log for this deletion action (tied to the Admin)
     await prisma.auditLog.create({
-      data: { action: 'USER_DELETED', userId: req.user?.id, details: `Deleted user ${id}` }
+      data: { 
+        action: 'USER_DELETED', 
+        userId: req.user?.id, 
+        details: `Admin deleted user: ${userIdentifier} (ID: ${id})` 
+      }
     });
 
-    res.json({ message: 'User deleted' });
+    res.json({ message: 'User deleted successfully' });
   } catch (error: any) {
-    res.status(500).json({ error: 'Failed to delete user' });
+    console.error('Delete error:', error);
+    res.status(500).json({ error: 'Failed to delete user: ' + error.message });
   }
 };
 

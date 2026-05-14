@@ -41,6 +41,7 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
     const deletedMap = new Map<string, { userId: string, email: string, role: string, firstName: string, lastName: string, lastSeen: string, phone?: string | null, createdAt?: string }>();
 
     auditLogs.forEach(log => {
+      // Logic 1: Find logs belonging to users who are no longer in the active list
       if (log.userId && !activeIds.has(log.userId)) {
         if (!deletedMap.has(log.userId)) {
           deletedMap.set(log.userId, {
@@ -54,18 +55,29 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
             createdAt: undefined
           });
         }
-        
-        const entity = deletedMap.get(log.userId)!;
+      }
+
+      // Logic 2: Find "USER_DELETED" logs created by admins and extract info
+      if (log.action === 'USER_DELETED') {
         const details = log.details || '';
-        if (entity.role === 'Unknown') {
-          const det = details.toLowerCase();
-          if (det.includes('client logged in') || log.action.includes('CLIENT')) entity.role = 'client';
-          else if (det.includes('caregiver logged in') || log.action.includes('CAREGIVER')) entity.role = 'caregiver';
-          else if (det.includes('admin logged in') || log.action.includes('ADMIN')) entity.role = 'admin';
-        }
-        if (entity.email === 'Unknown Email') {
-            const emailMatch = details.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-            if (emailMatch) entity.email = emailMatch[0];
+        // Format: "Admin deleted user: email@example.com (ID: uuid)"
+        const emailMatch = details.match(/user:\s*([^\s(]+)/);
+        const idMatch = details.match(/\(ID:\s*([^)]+)\)/);
+        
+        const extractedId = idMatch ? idMatch[1] : `del-${log.id}`;
+        const extractedEmail = emailMatch ? emailMatch[1] : 'Unknown Email';
+
+        if (!deletedMap.has(extractedId)) {
+          deletedMap.set(extractedId, {
+            userId: extractedId,
+            email: extractedEmail,
+            role: details.toLowerCase().includes('caregiver') ? 'caregiver' : 'client',
+            firstName: 'Deleted',
+            lastName: 'Profile',
+            lastSeen: log.timestamp,
+            phone: null,
+            createdAt: undefined
+          });
         }
       }
     });
