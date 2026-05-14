@@ -1,0 +1,9 @@
+{
+  "name": "caregiver-root",
+  "private": true,
+  "scripts": {
+    "install": "cd modern-stack/backend && npm install",
+    "build": "cd modern-stack/backend && npx prisma generate && npx tsc",
+    "start": "cd modern-stack/backend && npm start"
+  }
+}
