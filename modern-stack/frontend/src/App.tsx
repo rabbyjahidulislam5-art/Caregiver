@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ModalProvider } from './components/ModalContext';
+import ScrollToTop from './components/ScrollToTop';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ClientDashboard from './pages/ClientDashboard';
@@ -11,15 +12,16 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import CookiePolicy from './pages/CookiePolicy';
 
-// Pages that should NOT show the footer
-const NO_FOOTER_ROUTES = ['/client', '/caregiver', '/admin'];
+// Routes where Footer should be hidden
+const HIDE_FOOTER = ['/client', '/caregiver', '/admin', '/login', '/register'];
 
-function AppInner() {
-  const path = window.location.pathname;
-  const showFooter = !NO_FOOTER_ROUTES.some(r => path.startsWith(r));
+function AppLayout() {
+  const { pathname } = useLocation();
+  const showFooter = !HIDE_FOOTER.some(r => pathname.startsWith(r));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <ScrollToTop />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -43,7 +45,7 @@ function App() {
   return (
     <ModalProvider>
       <BrowserRouter>
-        <AppInner />
+        <AppLayout />
       </BrowserRouter>
     </ModalProvider>
   );

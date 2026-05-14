@@ -473,22 +473,32 @@ body::before {
 /* ── MODAL ─────────────────────────────────────────── */
 .modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.75);
+  background: rgba(0,0,0,0.78);
   backdrop-filter: blur(16px);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 1000;
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  overflow-y: auto;
   animation: fadeIn 0.25s ease;
 }
 .modal-glass {
-  background: rgba(10,10,28,0.96);
+  background: rgba(10,10,28,0.97);
   backdrop-filter: blur(50px);
+  -webkit-backdrop-filter: blur(50px);
   border: 1px solid var(--border-glass-strong);
   border-radius: var(--radius-xl);
   padding: 44px;
-  max-width: 500px;
-  width: 92%;
-  box-shadow: 0 30px 80px rgba(0,0,0,0.85), var(--shadow-glow-blue);
+  max-width: 520px;
+  width: 100%;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.9), var(--shadow-glow-blue);
   animation: modalEnter 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+  position: relative;
+  margin: auto;
 }
 .modal-title { font-size: 24px; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.5px; }
 .modal-body  { color: var(--text-secondary); font-size: 16px; line-height: 1.6; margin-bottom: 32px; }
@@ -497,8 +507,11 @@ body::before {
 /* ── AUTH ──────────────────────────────────────────── */
 .auth-container {
   min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 20px 60px;
   background:
     radial-gradient(ellipse at 30% 50%, rgba(59,130,246,0.12) 0%, transparent 60%),
     radial-gradient(ellipse at 70% 50%, rgba(139,92,246,0.12) 0%, transparent 60%);
