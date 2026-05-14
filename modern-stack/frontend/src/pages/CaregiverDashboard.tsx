@@ -144,8 +144,12 @@ export default function CaregiverDashboard() {
       </aside>
 
       {/* MAIN */}
-      <main className="main-content" key={animationKey}>
-        <div className="tab-transition">
+      <main className="main-content" key={animationKey} style={{ position: 'relative', overflow: 'hidden' }}>
+        {/* Animated Background Blobs for Dashboard */}
+        <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '40vw', height: '40vw', background: 'var(--gradient-primary)', filter: 'blur(120px)', opacity: 0.1, borderRadius: '50%', animation: 'bgDrift 20s infinite ease-in-out alternate-reverse', pointerEvents: 'none', zIndex: 0 }} />
+        <div style={{ position: 'absolute', bottom: '-10%', left: '-10%', width: '40vw', height: '40vw', background: 'var(--gradient-secondary)', filter: 'blur(120px)', opacity: 0.1, borderRadius: '50%', animation: 'bgDrift 25s infinite ease-in-out alternate', pointerEvents: 'none', zIndex: 0 }} />
+        
+        <div className="tab-transition" style={{ position: 'relative', zIndex: 1 }}>
 
           {/* OVERVIEW */}
           {tab === 'dashboard' && (
@@ -155,20 +159,23 @@ export default function CaregiverDashboard() {
                 <p>Manage your professional caregiving career seamlessly.</p>
               </div>
               <div className="stats-grid stagger">
-                <div className="stat-card glass-card">
-                  <div className="stat-value">{pendingBookings.length}</div>
-                  <div className="stat-label">Pending Requests</div>
-                  <div style={{ position: 'absolute', right: 20, top: 20, fontSize: 36, opacity: 0.15 }}>📩</div>
+                <div className="stat-card glass-card" style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(30,58,138,0.1))', border: '1px solid rgba(59,130,246,0.2)', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, background: 'var(--accent-blue)', opacity: 0.2, filter: 'blur(30px)', borderRadius: '50%' }} />
+                  <div className="stat-value" style={{ color: '#93c5fd', textShadow: '0 0 10px rgba(147,197,253,0.3)' }}>{pendingBookings.length}</div>
+                  <div className="stat-label" style={{ color: '#bfdbfe' }}>Pending Requests</div>
+                  <div style={{ position: 'absolute', right: 20, top: 20, fontSize: 36, opacity: 0.8, filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.5))' }}>📩</div>
                 </div>
-                <div className="stat-card glass-card">
-                  <div className="stat-value">{profile?.rating?.toFixed(1) || '0.0'}</div>
-                  <div className="stat-label">Average Rating</div>
-                  <div style={{ position: 'absolute', right: 20, top: 20, fontSize: 36, opacity: 0.15 }}>⭐</div>
+                <div className="stat-card glass-card" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(120,53,15,0.1))', border: '1px solid rgba(245,158,11,0.2)', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, background: 'var(--accent-amber)', opacity: 0.2, filter: 'blur(30px)', borderRadius: '50%' }} />
+                  <div className="stat-value" style={{ color: '#fcd34d', textShadow: '0 0 10px rgba(252,211,77,0.3)' }}>{profile?.rating?.toFixed(1) || '0.0'}</div>
+                  <div className="stat-label" style={{ color: '#fde68a' }}>Average Rating</div>
+                  <div style={{ position: 'absolute', right: 20, top: 20, fontSize: 36, opacity: 0.8, filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.5))' }}>⭐</div>
                 </div>
-                <div className="stat-card glass-card" style={{ border: profile?.isActive ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(245,158,11,0.3)' }}>
-                  <div className="stat-value" style={{ color: profile?.isActive ? '#6ee7b7' : '#fcd34d' }}>{profile?.isActive ? 'Active' : 'Pending'}</div>
-                  <div className="stat-label">Account Status</div>
-                  <div style={{ position: 'absolute', right: 20, top: 20, fontSize: 36, opacity: 0.15 }}>🛡️</div>
+                <div className="stat-card glass-card" style={{ background: profile?.isActive ? 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(6,78,59,0.1))' : 'linear-gradient(135deg, rgba(239,68,68,0.1), rgba(127,29,29,0.1))', border: profile?.isActive ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(239,68,68,0.3)', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, background: profile?.isActive ? 'var(--accent-green)' : 'var(--accent-red)', opacity: 0.2, filter: 'blur(30px)', borderRadius: '50%' }} />
+                  <div className="stat-value" style={{ color: profile?.isActive ? '#6ee7b7' : '#fca5a5', textShadow: profile?.isActive ? '0 0 10px rgba(110,231,183,0.3)' : '0 0 10px rgba(252,165,165,0.3)' }}>{profile?.isActive ? 'Active' : 'Pending'}</div>
+                  <div className="stat-label" style={{ color: profile?.isActive ? '#a7f3d0' : '#fecaca' }}>Account Status</div>
+                  <div style={{ position: 'absolute', right: 20, top: 20, fontSize: 36, opacity: 0.8, filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.5))' }}>{profile?.isActive ? '🛡️' : '⏳'}</div>
                 </div>
               </div>
             </>

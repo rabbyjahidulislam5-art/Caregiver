@@ -30,7 +30,11 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container" style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Animated Background Blobs */}
+      <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '40vw', height: '40vw', background: 'var(--gradient-primary)', filter: 'blur(100px)', opacity: 0.15, borderRadius: '50%', animation: 'bgDrift 15s infinite ease-in-out alternate', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '40vw', height: '40vw', background: 'var(--gradient-secondary)', filter: 'blur(100px)', opacity: 0.15, borderRadius: '50%', animation: 'bgDrift 20s infinite ease-in-out alternate-reverse', pointerEvents: 'none' }} />
+
       {/* Back to Home Button */}
       <button
         onClick={() => navigate('/')}
@@ -57,7 +61,7 @@ export default function Login() {
         ← Back to Home
       </button>
 
-      <form className="auth-card glass-card" onSubmit={handleLogin}>
+      <form className="auth-card glass-card" onSubmit={handleLogin} style={{ position: 'relative', zIndex: 10, animation: 'pageEnter 0.6s cubic-bezier(0.2,0.8,0.2,1) forwards' }}>
         <div style={{ textAlign: 'center', marginBottom: 8 }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🏥</div>
         </div>

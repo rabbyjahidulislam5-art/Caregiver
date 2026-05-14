@@ -7,13 +7,14 @@ import ClientDashboard from './pages/ClientDashboard';
 import CaregiverDashboard from './pages/CaregiverDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Landing from './pages/Landing';
+import FindCaregivers from './pages/FindCaregivers';
 import Footer from './components/Footer';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import CookiePolicy from './pages/CookiePolicy';
 
 // Routes where Footer should be hidden
-const HIDE_FOOTER = ['/client', '/caregiver', '/admin', '/login', '/register'];
+const HIDE_FOOTER = ['/client', '/caregiver', '/admin', '/login', '/register', '/find-caregivers'];
 
 function AppLayout() {
   const { pathname } = useLocation();
@@ -25,6 +26,7 @@ function AppLayout() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/find-caregivers" element={<FindCaregivers />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/client" element={<ClientDashboard />} />

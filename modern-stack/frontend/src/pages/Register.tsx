@@ -44,7 +44,11 @@ export default function Register() {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container" style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Animated Background Blobs */}
+      <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '40vw', height: '40vw', background: 'var(--gradient-primary)', filter: 'blur(100px)', opacity: 0.15, borderRadius: '50%', animation: 'bgDrift 15s infinite ease-in-out alternate-reverse', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: '-10%', left: '-10%', width: '40vw', height: '40vw', background: 'var(--gradient-secondary)', filter: 'blur(100px)', opacity: 0.15, borderRadius: '50%', animation: 'bgDrift 20s infinite ease-in-out alternate', pointerEvents: 'none' }} />
+
       <button
         onClick={() => navigate('/')}
         style={{
@@ -69,7 +73,7 @@ export default function Register() {
       >
         ← Back to Home
       </button>
-      <form className="auth-card glass-card" onSubmit={handleSubmit} style={{ maxWidth: 560 }}>
+      <form className="auth-card glass-card" onSubmit={handleSubmit} style={{ maxWidth: 560, position: 'relative', zIndex: 10, animation: 'pageEnter 0.6s cubic-bezier(0.2,0.8,0.2,1) forwards' }}>
         <h1 className="auth-title">Create Account</h1>
         <p className="auth-subtitle">Join CaregiverGO today</p>
 

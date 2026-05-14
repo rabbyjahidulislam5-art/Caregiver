@@ -119,10 +119,40 @@ body::before {
   50%     { border-color: rgba(139,92,246,0.6); }
 }
 
+@keyframes scrollBounce {
+  0%,100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(10px); }
+}
+@keyframes scrollDot {
+  0%   { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(14px); opacity: 0; }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes cardFloat {
+  0%,100% { transform: translateY(0) rotate(-1deg); }
+  50%      { transform: translateY(-12px) rotate(1deg); }
+}
+@keyframes lineGrow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
 /* ── UTILITY ANIMATIONS ────────────────────────────── */
 .fade-in  { animation: pageEnter 0.65s cubic-bezier(0.2,0.8,0.2,1) forwards; }
 .slide-up { animation: slideUp  0.5s cubic-bezier(0.2,0.8,0.2,1) forwards; }
 .tab-transition { animation: fadeScale 0.45s cubic-bezier(0.2,0.8,0.2,1) forwards; }
+
+/* ── SCROLL REVEAL ─────────────────────────────────── */
+.reveal        { opacity: 0; transform: translateY(50px);    transition: opacity 0.85s ease, transform 0.85s cubic-bezier(0.2,0.8,0.2,1); }
+.reveal-left   { opacity: 0; transform: translateX(-70px);   transition: opacity 0.85s ease, transform 0.85s cubic-bezier(0.2,0.8,0.2,1); }
+.reveal-right  { opacity: 0; transform: translateX(70px);    transition: opacity 0.85s ease, transform 0.85s cubic-bezier(0.2,0.8,0.2,1); }
+.reveal-scale  { opacity: 0; transform: scale(0.82);          transition: opacity 0.85s ease, transform 0.85s cubic-bezier(0.175,0.885,0.32,1.275); }
+.reveal.show, .reveal-left.show, .reveal-right.show, .reveal-scale.show {
+  opacity: 1; transform: none;
+}
 
 .stagger > * {
   opacity: 0;
