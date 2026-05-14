@@ -16,6 +16,10 @@ export default function AdminDashboard() {
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [animationKey, setAnimationKey] = useState(0);
+  
+  const [userTabLevel, setUserTabLevel] = useState<1 | 2>(1);
+  const [selectedUserCategory, setSelectedUserCategory] = useState<string>('');
+  const [selectedUserDetail, setSelectedUserDetail] = useState<any>(null);
 
   const navigate = useNavigate();
   const { showSuccess, showError, showConfirm } = useModal();
@@ -29,6 +33,8 @@ export default function AdminDashboard() {
   const changeTab = (newTab: Tab) => {
     setTab(newTab);
     setAnimationKey(prev => prev + 1);
+    setUserTabLevel(1);
+    setSelectedUserCategory('');
     if (newTab === 'users') loadUsers();
     if (newTab === 'caregivers') loadPendingCaregivers();
     if (newTab === 'bookings') loadPendingBookings();
@@ -155,34 +161,60 @@ export default function AdminDashboard() {
           {/* MANAGE USERS */}
           {tab === 'users' && (
             <>
-              <div className="page-header">
-                <h1>Manage Users</h1>
-                <p>View and manage all registered accounts on the platform.</p>
-              </div>
-              <div className="glass-table-container">
-                <table className="glass-table">
-                  <thead><tr><th>Full Name</th><th>Email Address</th><th>System Role</th><th>Actions</th></tr></thead>
-                  <tbody>
-                    {users.map((u: any) => (
-                      <tr key={u.userId}>
-                        <td style={{ fontWeight: 700, color: '#fff' }}>{u.firstName} {u.lastName}</td>
-                        <td style={{ color: 'var(--text-secondary)' }}>{u.email}</td>
-                        <td>
-                          <span className={`badge ${u.role === 'admin' ? 'badge-reviewed' : u.role === 'caregiver' ? 'badge-approved' : 'badge-pending'}`}>
-                            {u.role}
-                          </span>
-                        </td>
-                        <td>
-                          {u.role !== 'admin' && (
-                            <button className="btn btn-danger btn-sm" onClick={() => handleDeleteUser(u.userId, u.email)}>🗑️ Delete</button>
-                          )}
-                        </td>
-                      </tr>
+              {userTabLevel === 1 && (
+                <div style={{ animation: 'fadeScale 0.4s ease-out' }}>
+                  <div className="page-header">
+                    <h1>Manage Users</h1>
+                    <p>Select a category to view and manage registered accounts.</p>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 20 }}>
+                    {[
+                      { key: 'Clients', icon: '👤', count: users.filter(u => u.role === 'client' || u.role === 'user').length, color: '#3b82f6', bg: 'linear-gradient(135deg,#3b82f6,#2563eb)' },
+                      { key: 'Caregivers', icon: '🩺', count: users.filter(u => u.role === 'caregiver').length, color: '#10b981', bg: 'linear-gradient(135deg,#10b981,#059669)' },
+                      { key: 'Admins', icon: '🛡️', count: users.filter(u => u.role === 'admin').length, color: '#8b5cf6', bg: 'linear-gradient(135deg,#8b5cf6,#7c3aed)' },
+                    ].map(card => (
+                      <div key={card.key} onClick={() => { setSelectedUserCategory(card.key); setUserTabLevel(2); }}
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: 30, cursor: 'pointer', transition: 'all 0.25s', position: 'relative', overflow: 'hidden' }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 20px 40px ${card.color}33`; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}>
+                        <div style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, background: card.bg, borderRadius: '50%', opacity: 0.15, filter: 'blur(10px)' }} />
+                        <div style={{ fontSize: 40, marginBottom: 16 }}>{card.icon}</div>
+                        <h3 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#fff' }}>{card.key}</h3>
+                        <div style={{ marginTop: 8, fontSize: 14, color: 'var(--text-secondary)', fontWeight: 600 }}>{card.count} Active Accounts</div>
+                      </div>
                     ))}
-                    {users.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>No users found.</td></tr>}
-                  </tbody>
-                </table>
-              </div>
+                  </div>
+                </div>
+              )}
+
+              {userTabLevel === 2 && (
+                <div style={{ animation: 'fadeScale 0.4s ease-out' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24 }}>
+                    <button onClick={() => { setUserTabLevel(1); setSelectedUserCategory(''); }} style={{ padding: '8px 18px', borderRadius: 12, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>← Back</button>
+                    <h2 style={{ fontSize: 28, fontWeight: 900, color: '#fff', margin: 0 }}>{selectedUserCategory} Directory</h2>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+                    {users.filter(u => selectedUserCategory === 'Clients' ? (u.role === 'client' || u.role === 'user') : selectedUserCategory === 'Caregivers' ? u.role === 'caregiver' : u.role === 'admin').map((u: any) => (
+                      <div key={u.userId} onClick={() => setSelectedUserDetail(u)}
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16, transition: 'all 0.2s' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; }}>
+                        <div style={{ width: 50, height: 50, borderRadius: '50%', background: u.role === 'admin' ? 'linear-gradient(135deg,#8b5cf6,#7c3aed)' : u.role === 'caregiver' ? 'linear-gradient(135deg,#10b981,#059669)' : 'linear-gradient(135deg,#3b82f6,#2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
+                          {(u.firstName.charAt(0) || u.email.charAt(0)).toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1, overflow: 'hidden' }}>
+                          <div style={{ fontWeight: 700, color: '#fff', fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.firstName} {u.lastName}</div>
+                          <div style={{ fontSize: 13, color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
+                          {u.profession && <div style={{ fontSize: 11, color: '#3b82f6', marginTop: 4, fontWeight: 600 }}>{u.profession}</div>}
+                        </div>
+                      </div>
+                    ))}
+                    {users.filter(u => selectedUserCategory === 'Clients' ? (u.role === 'client' || u.role === 'user') : selectedUserCategory === 'Caregivers' ? u.role === 'caregiver' : u.role === 'admin').length === 0 && (
+                      <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>No accounts found in this category.</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -327,6 +359,40 @@ export default function AdminDashboard() {
 
         </div>
       </main>
+
+      {/* USER DETAIL MODAL */}
+      {selectedUserDetail && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 20 }}>
+          <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 24, width: '100%', maxWidth: 500, overflow: 'hidden', animation: 'fadeScale 0.3s ease-out' }}>
+            <div style={{ background: selectedUserDetail.role === 'admin' ? 'linear-gradient(135deg,#8b5cf6,#7c3aed)' : selectedUserDetail.role === 'caregiver' ? 'linear-gradient(135deg,#10b981,#059669)' : 'linear-gradient(135deg,#3b82f6,#2563eb)', padding: '30px 24px', display: 'flex', alignItems: 'center', gap: 20, position: 'relative' }}>
+              <div style={{ width: 70, height: 70, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', border: '4px solid rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 900, color: '#fff' }}>
+                {(selectedUserDetail.firstName.charAt(0) || selectedUserDetail.email.charAt(0)).toUpperCase()}
+              </div>
+              <div style={{ color: '#fff' }}>
+                <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>{selectedUserDetail.firstName} {selectedUserDetail.lastName}</h2>
+                <div style={{ fontSize: 13, opacity: 0.8, marginTop: 4, textTransform: 'uppercase', fontWeight: 700, letterSpacing: 1 }}>{selectedUserDetail.role}</div>
+              </div>
+              <button onClick={() => setSelectedUserDetail(null)} style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(0,0,0,0.2)', border: 'none', color: '#fff', width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>×</button>
+            </div>
+            
+            <div style={{ padding: 24 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Email Address</div><div style={{ color: '#f8fafc', fontSize: 15 }}>{selectedUserDetail.email}</div></div>
+                {selectedUserDetail.phone && <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Phone Number</div><div style={{ color: '#f8fafc', fontSize: 15 }}>{selectedUserDetail.phone}</div></div>}
+                {selectedUserDetail.profession && <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Profession</div><div style={{ color: '#f8fafc', fontSize: 15 }}>{selectedUserDetail.profession}</div></div>}
+                <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Joined Date</div><div style={{ color: '#f8fafc', fontSize: 15 }}>{new Date(selectedUserDetail.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</div></div>
+              </div>
+
+              <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                <button onClick={() => setSelectedUserDetail(null)} style={{ padding: '10px 20px', borderRadius: 12, background: 'rgba(255,255,255,0.05)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Close</button>
+                {selectedUserDetail.role !== 'admin' && (
+                  <button onClick={() => { handleDeleteUser(selectedUserDetail.userId, selectedUserDetail.email); setSelectedUserDetail(null); }} style={{ padding: '10px 20px', borderRadius: 12, background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', cursor: 'pointer', fontWeight: 600 }}>Delete Account</button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
