@@ -177,6 +177,14 @@ export const updateProfile = async (req: Request, res: Response) => {
       await prisma.user.update({ where: { id: userId }, data: { phone } });
     }
 
+    await prisma.auditLog.create({
+      data: {
+        action: 'PROFILE_UPDATED',
+        userId: userId,
+        details: `User updated their profile information`
+      }
+    });
+
     res.json({ message: 'Profile updated successfully!' });
   } catch (error: any) {
     res.status(500).json({ error: 'Update failed: ' + error.message });

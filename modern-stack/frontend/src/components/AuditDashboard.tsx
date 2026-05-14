@@ -367,21 +367,21 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
           <div>
             {selectedEntityRole === 'client' && (
               <>
-                {renderActivityGrid('Historical Booking Timeline', ['BOOKING'])}
+                {renderActivityGrid('Active & Past Bookings', ['BOOKING'])}
                 {renderActivityGrid('Reviews & Complaints Filed', ['REVIEW', 'COMPLAINT'])}
               </>
             )}
             
             {selectedEntityRole === 'caregiver' && (
               <>
-                {renderActivityGrid('Booking Acceptances', ['BOOKING'])}
-                {renderActivityGrid('Admin Approvals Received', ['APPROVAL'])}
+                {renderActivityGrid('Booking Interactions', ['BOOKING'])}
+                {renderActivityGrid('System Approvals', ['APPROVE', 'APPROVED'])}
               </>
             )}
             
             {selectedEntityRole === 'admin' && (
               <>
-                {renderActivityGrid('System Interventions', ['DELETED', 'APPROVED', 'UPDATED'])}
+                {renderActivityGrid('System Interventions', ['DELETE', 'APPROVE', 'UPDATE', 'REJECT'])}
               </>
             )}
 

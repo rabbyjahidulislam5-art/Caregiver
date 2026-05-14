@@ -15,6 +15,15 @@ export const createBooking = async (req: Request, res: Response) => {
         serviceDate: new Date(serviceDate),
       }
     });
+
+    await prisma.auditLog.create({
+      data: {
+        action: 'BOOKING_CREATED',
+        userId: clientId,
+        details: `Created pending booking request for Caregiver ${caregiverId}`
+      }
+    });
+
     res.status(201).json(booking);
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to create booking: ' + error.message });
@@ -54,6 +63,15 @@ export const acceptBooking = async (req: Request, res: Response) => {
       where: { id: (req.params.bookingId as string) },
       data: { status: 'CAREGIVER_ACCEPTED' }
     });
+
+    await prisma.auditLog.create({
+      data: {
+        action: 'BOOKING_ACCEPTED',
+        userId: booking.caregiverId,
+        details: `Accepted booking request from Client ${booking.clientId}`
+      }
+    });
+
     res.json(booking);
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to accept booking' });
@@ -67,6 +85,15 @@ export const rejectBooking = async (req: Request, res: Response) => {
       where: { id: (req.params.bookingId as string) },
       data: { status: 'rejected' }
     });
+
+    await prisma.auditLog.create({
+      data: {
+        action: 'BOOKING_REJECTED',
+        userId: booking.caregiverId,
+        details: `Rejected booking request from Client ${booking.clientId}`
+      }
+    });
+
     res.json(booking);
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to reject booking' });
@@ -80,6 +107,15 @@ export const completeBooking = async (req: Request, res: Response) => {
       where: { id: (req.params.bookingId as string) },
       data: { status: 'completed' }
     });
+
+    await prisma.auditLog.create({
+      data: {
+        action: 'BOOKING_COMPLETED',
+        userId: booking.caregiverId,
+        details: `Completed booking with Client ${booking.clientId}`
+      }
+    });
+
     res.json(booking);
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to complete booking' });

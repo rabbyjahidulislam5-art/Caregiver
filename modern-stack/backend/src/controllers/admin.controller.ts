@@ -69,10 +69,16 @@ export const getPendingCaregivers = async (req: Request, res: Response) => {
 export const approveCaregiver = async (req: Request, res: Response) => {
   try {
     const profileId = req.params.profileId as string;
-    await prisma.profile.update({ where: { id: profileId }, data: { isActive: true } });
+    const profile = await prisma.profile.update({ where: { id: profileId }, data: { isActive: true } });
 
+    // 1. Log for Admin
     await prisma.auditLog.create({
       data: { action: 'CAREGIVER_APPROVED', userId: req.user?.id, details: `Approved caregiver profile ${profileId}` }
+    });
+
+    // 2. Log for Caregiver
+    await prisma.auditLog.create({
+      data: { action: 'PROFILE_APPROVED', userId: profile.userId, details: `Your professional profile has been approved by Admin` }
     });
 
     res.json({ message: 'Caregiver approved' });
@@ -117,10 +123,21 @@ export const reviewBookingRequest = async (req: Request, res: Response) => {
     else if (action === 'reject') newStatus = 'REJECTED_BY_ADMIN';
     else return res.status(400).json({ error: 'Invalid action' });
 
-    await prisma.booking.update({ where: { id }, data: { status: newStatus } });
+    const booking = await prisma.booking.update({ where: { id }, data: { status: newStatus } });
 
+    // 1. Log for the Admin (The Performer)
     await prisma.auditLog.create({
-      data: { action: `BOOKING_${action.toUpperCase()}`, userId: req.user?.id, details: `${action} booking ${id}` }
+      data: { action: `BOOKING_${action.toUpperCase()}`, userId: req.user?.id, details: `Admin ${action}d booking ${id} (Client: ${booking.clientId}, Caregiver: ${booking.caregiverId})` }
+    });
+
+    // 2. Log for the Client (The Requester)
+    await prisma.auditLog.create({
+      data: { action: `BOOKING_${newStatus}`, userId: booking.clientId, details: `Admin ${action}d your booking request` }
+    });
+
+    // 3. Log for the Caregiver (The Provider)
+    await prisma.auditLog.create({
+      data: { action: `BOOKING_${newStatus}`, userId: booking.caregiverId, details: `Admin ${action}d the booking assigned to you` }
     });
 
     res.json({ message: `Booking ${action}d` });
