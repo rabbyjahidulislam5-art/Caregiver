@@ -76,7 +76,7 @@ export default function AdminDashboard() {
   const handleLogout = () => {
     showConfirm('Logout', 'Are you sure?', async () => {
       try { await api.post('/logout'); } catch {}
-      localStorage.clear(); navigate('/login');
+      localStorage.clear(); navigate('/');
     });
   };
 

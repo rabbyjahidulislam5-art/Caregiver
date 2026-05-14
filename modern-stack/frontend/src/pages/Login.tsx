@@ -31,6 +31,32 @@ export default function Login() {
 
   return (
     <div className="auth-container">
+      {/* Back to Home Button */}
+      <button
+        onClick={() => navigate('/')}
+        style={{
+          position: 'fixed', top: 20, left: 24, zIndex: 100,
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'rgba(255,255,255,0.07)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: 50, padding: '10px 18px',
+          color: 'rgba(255,255,255,0.85)', cursor: 'pointer',
+          fontSize: 14, fontWeight: 600,
+          backdropFilter: 'blur(12px)',
+          transition: 'all 0.25s ease',
+        }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLElement).style.background = 'rgba(59,130,246,0.15)';
+          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(59,130,246,0.4)';
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)';
+          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)';
+        }}
+      >
+        ← Back to Home
+      </button>
+
       <form className="auth-card glass-card" onSubmit={handleLogin}>
         <div style={{ textAlign: 'center', marginBottom: 8 }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🏥</div>
@@ -65,11 +91,11 @@ export default function Login() {
         </div>
 
         <button className="btn btn-primary btn-lg" type="submit" disabled={loading} style={{ width: '100%', marginTop: 8 }} id="login-submit">
-          {loading ? 'Signing in...' : 'Sign In'}
+          {loading ? 'Signing in...' : 'Sign In →'}
         </button>
 
         <p style={{ textAlign: 'center', marginTop: 24, color: 'var(--text-secondary)', fontSize: 14 }}>
-          Don't have an account? <Link to="/register" style={{ color: 'var(--accent-blue)', textDecoration: 'none', fontWeight: 600 }}>Register</Link>
+          Don't have an account? <Link to="/register" style={{ color: 'var(--accent-blue)', textDecoration: 'none', fontWeight: 600 }}>Register Free</Link>
         </p>
       </form>
     </div>

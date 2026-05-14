@@ -205,14 +205,18 @@ export default function Footer() {
             © {new Date().getFullYear()} <span style={{ color: 'rgba(148,163,184,0.9)', fontWeight: 600 }}>CaregiverGO</span>. All rights reserved. Made with ❤️ for better care.
           </p>
           <div style={{ display: 'flex', gap: 24 }}>
-            {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map(t => (
-              <a key={t} href="#" style={{
+            {[
+              { label: 'Privacy Policy', to: '/privacy-policy' },
+              { label: 'Terms of Service', to: '/terms-of-service' },
+              { label: 'Cookie Policy', to: '/cookie-policy' },
+            ].map(({ label, to }) => (
+              <Link key={label} to={to} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{
                 color: 'rgba(100,116,139,0.8)', textDecoration: 'none',
                 fontSize: 13, transition: 'color 0.25s ease',
               }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
                 onMouseLeave={e => (e.currentTarget.style.color = 'rgba(100,116,139,0.8)')}
-              >{t}</a>
+              >{label}</Link>
             ))}
           </div>
         </div>

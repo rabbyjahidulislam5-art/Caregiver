@@ -76,7 +76,7 @@ export default function ClientDashboard() {
   const handleLogout = () => {
     showConfirm('Logout', 'Are you sure you want to sign out?', async () => {
       try { await api.post('/logout'); } catch {}
-      localStorage.clear(); navigate('/login');
+      localStorage.clear(); navigate('/');
     });
   };
 
