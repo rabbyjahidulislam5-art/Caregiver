@@ -157,7 +157,7 @@ export const filterCaregivers = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
   try {
     const userId = req.params.userId as string;
-    const { firstName, lastName, profession, experienceYears, address, phone } = req.body;
+    const { firstName, lastName, profession, experienceYears, address, phone, profilePictureUrl } = req.body;
 
     const profile = await prisma.profile.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Profile not found' });
@@ -170,6 +170,7 @@ export const updateProfile = async (req: Request, res: Response) => {
         ...(profession !== undefined && { profession }),
         ...(experienceYears !== undefined && experienceYears !== '' && { experienceYears: parseInt(String(experienceYears)) }),
         ...(address !== undefined && { presentAddress: address }),
+        ...(profilePictureUrl !== undefined && { profilePictureUrl }),
       }
     });
 

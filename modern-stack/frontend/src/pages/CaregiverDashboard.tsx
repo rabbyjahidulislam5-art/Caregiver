@@ -13,7 +13,7 @@ export default function CaregiverDashboard() {
   const [historyBookings, setHistoryBookings] = useState<any[]>([]);
   const [schedules, setSchedules] = useState<any[]>([]);
   const [newSchedule, setNewSchedule] = useState({ dayOfWeek: 'Monday', startTime: '09:00', endTime: '17:00' });
-  const [editForm, setEditForm] = useState({ firstName: '', lastName: '', profession: '', experienceYears: '', address: '', phone: '' });
+  const [editForm, setEditForm] = useState({ firstName: '', lastName: '', profession: '', experienceYears: '', address: '', phone: '', profilePictureUrl: '' });
   const [animationKey, setAnimationKey] = useState(0);
 
   const navigate = useNavigate();
@@ -39,7 +39,15 @@ export default function CaregiverDashboard() {
     try {
       const p = await api.get(`/profile/${userId}`);
       setProfile(p);
-      setEditForm({ firstName: p.firstName || '', lastName: p.lastName || '', profession: p.profession || '', experienceYears: String(p.experienceYears || ''), address: p.address || '', phone: p.phone || '' });
+      setEditForm({ 
+        firstName: p.firstName || '', 
+        lastName: p.lastName || '', 
+        profession: p.profession || '', 
+        experienceYears: String(p.experienceYears || ''), 
+        address: p.address || '', 
+        phone: p.phone || '',
+        profilePictureUrl: p.image || ''
+      });
     } catch {}
   };
   const loadPending = async () => { try { setPendingBookings(await api.get(`/bookings/caregiver/${userId}/pending`)); } catch {} };
@@ -419,6 +427,10 @@ export default function CaregiverDashboard() {
                 <div className="form-group">
                   <label className="form-label">Contact Phone</label>
                   <input className="input-glass" value={editForm.phone} onChange={e => setEditForm(p => ({ ...p, phone: e.target.value }))} />
+                </div>
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label className="form-label">Profile Picture URL</label>
+                  <input className="input-glass" value={editForm.profilePictureUrl} onChange={e => setEditForm(p => ({ ...p, profilePictureUrl: e.target.value }))} placeholder="https://example.com/image.jpg" />
                 </div>
                 <button className="btn btn-primary btn-lg" onClick={handleUpdateProfile} style={{ width: '100%', marginTop: 8 }}>
                   💾 Save Profile Changes

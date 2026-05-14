@@ -18,7 +18,7 @@ export default function ClientDashboard() {
   const [complaintCaregiverId, setComplaintCaregiverId] = useState('');
   const [reviewData, setReviewData] = useState({ caregiverId: '', rating: 5, comment: '' });
   const [animationKey, setAnimationKey] = useState(0);
-  const [editForm, setEditForm] = useState({ firstName: '', lastName: '', phone: '', address: '' });
+  const [editForm, setEditForm] = useState({ firstName: '', lastName: '', phone: '', address: '', profilePictureUrl: '' });
 
   const navigate = useNavigate();
   const { showSuccess, showError, showConfirm } = useModal();
@@ -42,7 +42,13 @@ export default function ClientDashboard() {
     try {
       const p = await api.get(`/profile/${userId}`);
       setProfile(p);
-      setEditForm({ firstName: p.firstName || '', lastName: p.lastName?.split(' ').slice(1).join(' ') || '', phone: p.phone || '', address: p.address || '' });
+      setEditForm({ 
+        firstName: p.firstName || '', 
+        lastName: p.lastName || '', 
+        phone: p.phone || '', 
+        address: p.address || '',
+        profilePictureUrl: p.image || ''
+      });
     } catch {}
   };
   const loadActiveBookings = async () => { try { setActiveBookings(await api.get(`/bookings/active/${userId}`)); } catch {} };
@@ -237,8 +243,12 @@ export default function ClientDashboard() {
                 {caregivers.map(cg => (
                   <div key={cg.userId} className="glass-card" style={{ padding: 24, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 18 }}>
-                      <div style={{ width: 50, height: 50, borderRadius: 16, background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, flexShrink: 0 }}>
-                        {cg.firstName?.[0] || '👨‍⚕️'}
+                      <div style={{ width: 50, height: 50, borderRadius: 16, background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, flexShrink: 0, overflow: 'hidden' }}>
+                        {cg.profilePictureUrl ? (
+                          <img src={cg.profilePictureUrl} alt={cg.firstName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          cg.firstName?.[0] || '👨‍⚕️'
+                        )}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <h3 style={{ fontWeight: 800, fontSize: 17, marginBottom: 3 }}>{cg.firstName} {cg.lastName}</h3>
@@ -400,8 +410,12 @@ export default function ClientDashboard() {
               {/* Profile Card */}
               <div className="glass-card-static" style={{ padding: 40, maxWidth: 640, marginBottom: 28 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 22, marginBottom: 36 }}>
-                  <div style={{ width: 84, height: 84, borderRadius: 24, background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 900, boxShadow: 'var(--shadow-glow-blue)', flexShrink: 0 }}>
-                    {profile.firstName?.[0]?.toUpperCase() || '?'}
+                  <div style={{ width: 84, height: 84, borderRadius: 24, background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 900, boxShadow: 'var(--shadow-glow-blue)', flexShrink: 0, overflow: 'hidden' }}>
+                    {profile.image ? (
+                      <img src={profile.image} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      profile.firstName?.[0]?.toUpperCase() || '?'
+                    )}
                   </div>
                   <div>
                     <h2 style={{ fontWeight: 800, fontSize: 24, marginBottom: 4 }}>{profile.fullName || `${editForm.firstName} ${editForm.lastName}`}</h2>
@@ -429,9 +443,12 @@ export default function ClientDashboard() {
                   </div>
                 </div>
 
+                <div className="form-group" style={{ marginTop: 18 }}>
+                  <label className="form-label">Profile Picture URL</label>
+                  <input className="input-glass" value={editForm.profilePictureUrl} onChange={e => setEditForm(p => ({ ...p, profilePictureUrl: e.target.value }))} placeholder="https://example.com/image.jpg" />
+                </div>
 
-
-                <button className="btn btn-primary btn-lg" onClick={handleUpdateProfile} style={{ width: '100%', marginTop: 16 }}>
+                <button className="btn btn-primary btn-lg" onClick={handleUpdateProfile} style={{ width: '100%', marginTop: 24 }}>
                   💾 Save Changes
                 </button>
               </div>
