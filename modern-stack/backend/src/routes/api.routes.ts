@@ -54,4 +54,7 @@ router.put('/admin/complaints/:id/reply', admin.replyToComplaint);
 router.get('/admin/audit-logs', admin.getAuditLogs);
 router.get('/admin/stats', admin.getStats);
 
+// === Self-Service Account Deletion ===
+router.delete('/account/delete/:userId', admin.deleteSelf);
+
 export default router;

@@ -264,3 +264,39 @@ export const getStats = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to fetch stats' });
   }
 };
+
+// DELETE /api/account/delete/:userId — Self-service account deletion
+export const deleteSelf = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.userId as string;
+    const targetUser = await prisma.user.findUnique({ where: { id } });
+    if (!targetUser) return res.status(404).json({ error: 'User not found' });
+
+    const userEmail = targetUser.email;
+    const userRole = targetUser.role;
+
+    // Write deletion audit log FIRST (before cascade, so userId is still valid)
+    await prisma.auditLog.create({
+      data: {
+        action: 'USER_DELETED',
+        userId: id,
+        details: `${userRole} ${userEmail} voluntarily deleted their own account (ID: ${id})`,
+      }
+    });
+
+    // Cascade delete dependent records
+    await prisma.profile.deleteMany({ where: { userId: id } });
+    await prisma.booking.deleteMany({ where: { OR: [{ clientId: id }, { caregiverId: id }] } });
+    await prisma.review.deleteMany({ where: { OR: [{ clientId: id }, { caregiverId: id }] } });
+    await prisma.complaint.deleteMany({ where: { OR: [{ clientId: id }, { caregiverId: id }] } });
+    await prisma.schedule.deleteMany({ where: { caregiverId: id } });
+
+    // Delete user (AuditLog.userId will be set to NULL automatically via onDelete:SetNull)
+    await prisma.user.delete({ where: { id } });
+
+    res.json({ message: 'Account deleted successfully' });
+  } catch (error: any) {
+    console.error('Self-delete error:', error);
+    res.status(500).json({ error: 'Failed to delete account: ' + error.message });
+  }
+};

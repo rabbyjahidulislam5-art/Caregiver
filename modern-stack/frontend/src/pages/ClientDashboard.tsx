@@ -18,6 +18,7 @@ export default function ClientDashboard() {
   const [complaintCaregiverId, setComplaintCaregiverId] = useState('');
   const [reviewData, setReviewData] = useState({ caregiverId: '', rating: 5, comment: '' });
   const [animationKey, setAnimationKey] = useState(0);
+  const [editForm, setEditForm] = useState({ firstName: '', lastName: '', phone: '', address: '' });
 
   const navigate = useNavigate();
   const { showSuccess, showError, showConfirm } = useModal();
@@ -37,7 +38,13 @@ export default function ClientDashboard() {
     if (newTab === 'bookings') loadActiveBookings();
   };
 
-  const loadProfile = async () => { try { setProfile(await api.get(`/profile/${userId}`)); } catch {} };
+  const loadProfile = async () => {
+    try {
+      const p = await api.get(`/profile/${userId}`);
+      setProfile(p);
+      setEditForm({ firstName: p.firstName || '', lastName: p.lastName?.split(' ').slice(1).join(' ') || '', phone: p.phone || '', address: p.address || '' });
+    } catch {}
+  };
   const loadActiveBookings = async () => { try { setActiveBookings(await api.get(`/bookings/active/${userId}`)); } catch {} };
   const loadHistory = async () => { try { setHistoryBookings(await api.get(`/bookings/history/${userId}`)); } catch {} };
   const loadComplaints = async () => { try { setComplaints(await api.get(`/complaints/history/${userId}`)); } catch {} };
@@ -78,6 +85,29 @@ export default function ClientDashboard() {
       try { await api.post('/logout'); } catch {}
       localStorage.clear(); navigate('/');
     });
+  };
+
+  const handleUpdateProfile = async () => {
+    try {
+      await api.put(`/update-profile/${userId}`, editForm);
+      showSuccess('Updated!', 'Your profile has been updated successfully.');
+      loadProfile();
+    } catch (e: any) { showError('Error', e.message); }
+  };
+
+  const handleDeleteAccount = () => {
+    showConfirm(
+      '⚠️ Delete Account',
+      'This will permanently delete your account and all your data. This cannot be undone. Are you absolutely sure?',
+      async () => {
+        try {
+          await api.del(`/account/delete/${userId}`);
+          showSuccess('Account Deleted', 'Your account has been permanently removed.');
+          localStorage.clear();
+          navigate('/');
+        } catch (e: any) { showError('Delete Failed', e.message); }
+      }
+    );
   };
 
   const sidebarItems: { key: Tab; icon: string; label: string }[] = [
@@ -364,34 +394,73 @@ export default function ClientDashboard() {
             <>
               <div className="page-header">
                 <h1>My Profile</h1>
-                <p>Manage your personal account details.</p>
+                <p>View and update your personal account details.</p>
               </div>
-              <div className="glass-card-static" style={{ padding: 40, maxWidth: 580, margin: '0 auto' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 22, marginBottom: 40 }}>
-                  <div style={{ width: 80, height: 80, borderRadius: 24, background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, boxShadow: 'var(--shadow-glow-blue)', flexShrink: 0 }}>
+
+              {/* Profile Card */}
+              <div className="glass-card-static" style={{ padding: 40, maxWidth: 640, marginBottom: 28 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 22, marginBottom: 36 }}>
+                  <div style={{ width: 84, height: 84, borderRadius: 24, background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 900, boxShadow: 'var(--shadow-glow-blue)', flexShrink: 0 }}>
                     {profile.firstName?.[0]?.toUpperCase() || '?'}
                   </div>
                   <div>
-                    <h2 style={{ fontWeight: 800, fontSize: 26, letterSpacing: '-0.5px', marginBottom: 4 }}>{profile.fullName}</h2>
+                    <h2 style={{ fontWeight: 800, fontSize: 24, marginBottom: 4 }}>{profile.fullName || `${editForm.firstName} ${editForm.lastName}`}</h2>
                     <p style={{ color: 'var(--accent-cyan)', fontSize: 14, fontWeight: 600 }}>{profile.email}</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 4, textTransform: 'capitalize' }}>🛡️ {profile.role}</p>
                   </div>
                 </div>
-                <div style={{ display: 'grid', gap: 14 }}>
-                  {[
-                    ['Phone Number', profile.phone, '📱'],
-                    ['Home Address', profile.address, '📍'],
-                    ['Account Role', profile.role, '🛡️'],
-                    ['Blood Group', profile.bloodGroup, '🩸'],
-                  ].map(([label, val, icon]) => (
-                    <div key={label as string} style={{ display: 'flex', alignItems: 'center', padding: '14px 18px', background: 'rgba(0,0,0,0.2)', borderRadius: 14, border: '1px solid rgba(255,255,255,0.05)', gap: 14 }}>
-                      <span style={{ fontSize: 22, flexShrink: 0 }}>{icon}</span>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+                  <div className="form-group">
+                    <label className="form-label">First Name</label>
+                    <input className="input-glass" value={editForm.firstName} onChange={e => setEditForm(p => ({ ...p, firstName: e.target.value }))} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Last Name</label>
+                    <input className="input-glass" value={editForm.lastName} onChange={e => setEditForm(p => ({ ...p, lastName: e.target.value }))} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Phone Number</label>
+                    <input className="input-glass" value={editForm.phone} onChange={e => setEditForm(p => ({ ...p, phone: e.target.value }))} placeholder="e.g. +88017xxxxxxxx" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Home Address</label>
+                    <input className="input-glass" value={editForm.address} onChange={e => setEditForm(p => ({ ...p, address: e.target.value }))} placeholder="Your address" />
+                  </div>
+                </div>
+
+
+
+                <button className="btn btn-primary btn-lg" onClick={handleUpdateProfile} style={{ width: '100%', marginTop: 16 }}>
+                  💾 Save Changes
+                </button>
+              </div>
+
+              {/* Info Display */}
+              <div className="glass-card-static" style={{ padding: 28, maxWidth: 640, marginBottom: 28 }}>
+                <h3 style={{ fontWeight: 700, marginBottom: 18, fontSize: 16 }}>Account Information</h3>
+                <div style={{ display: 'grid', gap: 12 }}>
+                  {[['Blood Group', profile.bloodGroup, '🩸'], ['Account Role', profile.role, '🛡️']].map(([label, val, icon]) => (
+                    <div key={label as string} style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', background: 'rgba(0,0,0,0.2)', borderRadius: 12, gap: 14 }}>
+                      <span style={{ fontSize: 20 }}>{icon}</span>
                       <div>
-                        <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 3 }}>{label}</div>
-                        <div style={{ color: '#fff', fontWeight: 600, fontSize: 15 }}>{val || 'Not provided'}</div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
+                        <div style={{ color: '#fff', fontWeight: 600, fontSize: 14, textTransform: 'capitalize' }}>{val || 'Not provided'}</div>
                       </div>
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Danger Zone */}
+              <div style={{ maxWidth: 640, padding: 28, border: '1px solid rgba(239,68,68,0.3)', borderRadius: 20, background: 'rgba(239,68,68,0.04)' }}>
+                <h3 style={{ color: '#f87171', fontWeight: 800, fontSize: 16, marginBottom: 8 }}>⚠️ Danger Zone</h3>
+                <p style={{ color: '#94a3b8', fontSize: 13, marginBottom: 20 }}>Once you delete your account, there is no going back. Your bookings, complaints and reviews will be permanently removed. Your activity history will still be preserved in the system audit log.</p>
+                <button onClick={handleDeleteAccount} style={{ padding: '12px 28px', borderRadius: 12, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.5)', color: '#f87171', cursor: 'pointer', fontWeight: 700, fontSize: 14, transition: 'all 0.2s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.3)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)'; }}>
+                  🗑️ Delete My Account Permanently
+                </button>
               </div>
             </>
           )}

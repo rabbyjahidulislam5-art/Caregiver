@@ -98,6 +98,21 @@ export default function CaregiverDashboard() {
     });
   };
 
+  const handleDeleteAccount = () => {
+    showConfirm(
+      '⚠️ Delete Account',
+      'This will permanently delete your caregiver account. Your bookings and schedules will be removed. Your audit history will be preserved. This cannot be undone.',
+      async () => {
+        try {
+          await api.del(`/account/delete/${userId}`);
+          showSuccess('Account Deleted', 'Your account has been permanently removed.');
+          localStorage.clear();
+          navigate('/');
+        } catch (e: any) { showError('Delete Failed', e.message); }
+      }
+    );
+  };
+
   const sidebarItems: { key: Tab; icon: string; label: string }[] = [
     { key: 'dashboard', icon: '📊', label: 'Overview' },
     { key: 'pending',   icon: '⏳', label: 'Pending Requests' },
@@ -349,7 +364,34 @@ export default function CaregiverDashboard() {
                 <h1>Edit Professional Profile</h1>
                 <p>Keep your details updated to attract more clients.</p>
               </div>
-              <div className="glass-card-static" style={{ padding: 40, maxWidth: 760 }}>
+              <div className="glass-card-static" style={{ padding: 40, maxWidth: 760, marginBottom: 28 }}>
+
+                {/* Profile Picture */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 36 }}>
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    {profile?.image ? (
+                      <img
+                        src={profile.image}
+                        alt="Profile"
+                        style={{ width: 96, height: 96, borderRadius: 24, objectFit: 'cover', border: '3px solid rgba(16,185,129,0.4)', boxShadow: '0 0 24px rgba(16,185,129,0.2)' }}
+                        onError={e => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div style={{ width: 96, height: 96, borderRadius: 24, background: 'linear-gradient(135deg,#10b981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 38, fontWeight: 900, color: '#fff', boxShadow: '0 0 24px rgba(16,185,129,0.2)' }}>
+                        {profile?.firstName?.[0]?.toUpperCase() || '?'}
+                      </div>
+                    )}
+                    <div style={{ position: 'absolute', bottom: -6, right: -6, width: 26, height: 26, borderRadius: '50%', background: profile?.isActive ? '#10b981' : '#f59e0b', border: '2px solid #0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
+                      {profile?.isActive ? '✓' : '⏳'}
+                    </div>
+                  </div>
+                  <div>
+                    <h2 style={{ fontWeight: 800, fontSize: 22, marginBottom: 4 }}>{profile?.firstName} {profile?.lastName}</h2>
+                    <p style={{ color: 'var(--accent-cyan)', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>{profile?.profession || 'Professional Caregiver'}</p>
+                    <p style={{ color: profile?.isActive ? '#6ee7b7' : '#fcd34d', fontSize: 12, marginTop: 4, fontWeight: 600 }}>{profile?.isActive ? '● Active' : '● Pending Approval'}</p>
+                  </div>
+                </div>
+
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">First Name</label>
@@ -380,6 +422,17 @@ export default function CaregiverDashboard() {
                 </div>
                 <button className="btn btn-primary btn-lg" onClick={handleUpdateProfile} style={{ width: '100%', marginTop: 8 }}>
                   💾 Save Profile Changes
+                </button>
+              </div>
+
+              {/* Danger Zone */}
+              <div style={{ maxWidth: 760, padding: 28, border: '1px solid rgba(239,68,68,0.3)', borderRadius: 20, background: 'rgba(239,68,68,0.04)' }}>
+                <h3 style={{ color: '#f87171', fontWeight: 800, fontSize: 16, marginBottom: 8 }}>⚠️ Danger Zone</h3>
+                <p style={{ color: '#94a3b8', fontSize: 13, marginBottom: 20 }}>Deleting your caregiver account will remove your profile from the platform. Clients will no longer find you. Your past booking history and audit logs will be preserved in the system for compliance purposes.</p>
+                <button onClick={handleDeleteAccount} style={{ padding: '12px 28px', borderRadius: 12, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.5)', color: '#f87171', cursor: 'pointer', fontWeight: 700, fontSize: 14, transition: 'all 0.2s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.3)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)'; }}>
+                  🗑️ Delete My Caregiver Account
                 </button>
               </div>
             </>
