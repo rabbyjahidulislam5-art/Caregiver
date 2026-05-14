@@ -138,7 +138,7 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
   // --- RENDERERS ---
 
   const renderLevel1 = () => (
-    <div className="reveal-scale">
+    <div style={{ animation: 'fadeScale 0.6s ease-out forwards' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 40 }}>
         {[
           { key: 'Users', icon: '👥', color: 'var(--accent-blue)', desc: 'Active Clients' },
@@ -217,7 +217,7 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
     }
 
     return (
-      <div className="reveal-right">
+      <div style={{ animation: 'slideLeft 0.5s ease-out forwards' }}>
         <button onClick={goBack} className="btn btn-ghost" style={{ marginBottom: 24, padding: '8px 16px', background: 'rgba(255,255,255,0.05)' }}>
           ← Back to Dashboard
         </button>
@@ -310,7 +310,7 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
     const entity = selectedCategory ? categories[selectedCategory as keyof typeof categories].find(e => e.userId === selectedEntityId) : null;
     
     return (
-      <div className="reveal-scale">
+      <div style={{ animation: 'fadeScale 0.5s ease-out forwards' }}>
         <button onClick={goBack} className="btn btn-ghost" style={{ marginBottom: 24, padding: '8px 16px', background: 'rgba(255,255,255,0.05)' }}>
           ← Back to List
         </button>
