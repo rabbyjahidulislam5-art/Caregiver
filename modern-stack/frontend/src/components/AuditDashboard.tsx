@@ -125,7 +125,8 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
   // --- RENDERERS ---
 
   const renderLevel1 = () => (
-    <div className="reveal-scale">
+    <div>
+      <h1 style={{ color: 'red', fontSize: 40, background: 'yellow', padding: 20 }}>TESTING AUDIT DASHBOARD</h1>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 40 }}>
         {[
           { key: 'Users', icon: '👥', color: 'var(--accent-blue)', desc: 'Active Clients' },
