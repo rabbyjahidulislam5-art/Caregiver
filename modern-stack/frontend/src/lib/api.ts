@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000' : 'https://caregivergo-1azl.onrender.com');
+const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:4000' : 'https://caregivergo-1azl.onrender.com';
 
 export const api = {
   async get(path: string) {
