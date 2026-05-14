@@ -251,7 +251,10 @@ export default function AuditDashboard({ users, auditLogs }: Props) {
   const renderLevel3 = () => {
     const allEntities = selectedCategory ? categories[selectedCategory as keyof typeof categories] : [];
     const entity = allEntities.find(e => e.userId === selectedEntityId);
-    const entityLogs = getEntityLogs(selectedEntityId);
+    let entityLogs = getEntityLogs(selectedEntityId);
+    if (filterDate) {
+      entityLogs = entityLogs.filter(l => l.timestamp.startsWith(filterDate));
+    }
     const role = selectedEntityRole in ROLE_SECTIONS ? selectedEntityRole : 'Unknown';
     const sections = ROLE_SECTIONS[role] || ROLE_SECTIONS['Unknown'];
 
@@ -264,7 +267,16 @@ export default function AuditDashboard({ users, auditLogs }: Props) {
 
     return (
       <div style={{ animation: 'fadeScale 0.4s ease-out' }}>
-        <button onClick={goBack} style={{ marginBottom: 24, padding: '8px 18px', borderRadius: 12, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>← Back to Directory</button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+          <button onClick={goBack} style={{ padding: '8px 18px', borderRadius: 12, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>← Back to Directory</button>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
+              style={{ padding: '8px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', outline: 'none', fontSize: 13, colorScheme: 'dark' }} />
+            {filterDate && (
+              <button onClick={() => setFilterDate('')} style={{ padding: '8px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', cursor: 'pointer', fontSize: 13 }}>Clear</button>
+            )}
+          </div>
+        </div>
 
         {/* Profile Header */}
         <div style={{ background: headerColors[role] || headerColors.Unknown, borderRadius: 24, padding: '36px 44px', marginBottom: 36, position: 'relative', overflow: 'hidden', boxShadow: '0 16px 48px rgba(0,0,0,0.3)' }}>
