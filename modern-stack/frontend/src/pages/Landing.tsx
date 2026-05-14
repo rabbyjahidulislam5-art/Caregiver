@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useModal } from '../components/ModalContext';
@@ -332,11 +333,14 @@ export default function Landing() {
         )}
       </main>
 
-      {/* ── FILTER MODAL ──────────────────────────────────── */}
-      {showFilterModal && (
-        <div className="modal-overlay" onClick={() => setShowFilterModal(false)}>
+      {/* ── FILTER MODAL via portal (bypass bgDrift stacking context) ── */}
+      {showFilterModal && createPortal(
+        <div className="modal-overlay" onClick={() => setShowFilterModal(false)} style={{ position: 'fixed', inset: 0, zIndex: 99999 }}>
           <div className="modal-glass" onClick={e => e.stopPropagation()}>
-            <h3 className="modal-title">Advanced Filter ⚙️</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h3 className="modal-title" style={{ margin: 0 }}>Advanced Filter ⚙️</h3>
+              <button onClick={() => setShowFilterModal(false)} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid var(--border-glass)', color: 'white', width: 38, height: 38, borderRadius: 12, cursor: 'pointer', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+            </div>
             <div className="form-group">
               <label className="form-label">Profession</label>
               <select className="select-glass" value={filter.profession} onChange={e => setFilter(p => ({ ...p, profession: e.target.value }))}>
@@ -369,12 +373,13 @@ export default function Landing() {
               <button className="btn btn-primary" onClick={applyFilter}>Apply Filter ✨</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* ── REVIEWS MODAL ─────────────────────────────────── */}
-      {showReviewsModal && (
-        <div className="modal-overlay" onClick={() => setShowReviewsModal(false)}>
+      {/* ── REVIEWS MODAL via portal ── */}
+      {showReviewsModal && createPortal(
+        <div className="modal-overlay" onClick={() => setShowReviewsModal(false)} style={{ position: 'fixed', inset: 0, zIndex: 99999 }}>
           <div className="modal-glass" onClick={e => e.stopPropagation()} style={{ maxWidth: 580 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <h3 className="modal-title" style={{ margin: 0 }}>Client Reviews 💬</h3>
@@ -405,7 +410,8 @@ export default function Landing() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
