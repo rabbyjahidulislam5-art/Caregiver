@@ -138,9 +138,13 @@ export default function FindCaregivers() {
                     fontSize: 22, fontWeight: 800,
                     border: '2px solid rgba(59,130,246,0.25)',
                     boxShadow: '0 4px 15px rgba(0,0,0,0.4)',
-                    flexShrink: 0, color: '#93c5fd',
+                    flexShrink: 0, color: '#93c5fd', overflow: 'hidden'
                   }}>
-                    {cg.firstName?.[0]?.toUpperCase() || '👨‍⚕️'}
+                    {cg.profilePictureUrl ? (
+                      <img src={cg.profilePictureUrl} alt={cg.firstName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      cg.firstName?.[0]?.toUpperCase() || '👨‍⚕️'
+                    )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <h3 style={{ fontWeight: 800, fontSize: 18, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
