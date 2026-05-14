@@ -69,16 +69,22 @@ export const getPendingCaregivers = async (req: Request, res: Response) => {
 export const approveCaregiver = async (req: Request, res: Response) => {
   try {
     const profileId = req.params.profileId as string;
-    const profile = await prisma.profile.update({ where: { id: profileId }, data: { isActive: true } });
+    const profile = await prisma.profile.update({ 
+      where: { id: profileId }, 
+      data: { isActive: true },
+      include: { user: true }
+    });
+
+    const fullName = `${profile.firstName} ${profile.lastName}`;
 
     // 1. Log for Admin
     await prisma.auditLog.create({
-      data: { action: 'CAREGIVER_APPROVED', userId: req.user?.id, details: `Approved caregiver profile ${profileId}` }
+      data: { action: 'CAREGIVER_APPROVED', userId: req.user?.id, details: `Approved caregiver profile for ${fullName} (${profile.user.email})` }
     });
 
     // 2. Log for Caregiver
     await prisma.auditLog.create({
-      data: { action: 'PROFILE_APPROVED', userId: profile.userId, details: `Your professional profile has been approved by Admin` }
+      data: { action: 'PROFILE_APPROVED', userId: profile.userId, details: `Your professional profile has been officially approved by the Administration` }
     });
 
     res.json({ message: 'Caregiver approved' });
@@ -123,21 +129,35 @@ export const reviewBookingRequest = async (req: Request, res: Response) => {
     else if (action === 'reject') newStatus = 'REJECTED_BY_ADMIN';
     else return res.status(400).json({ error: 'Invalid action' });
 
-    const booking = await prisma.booking.update({ where: { id }, data: { status: newStatus } });
+    const booking = await prisma.booking.update({ 
+      where: { id }, 
+      data: { status: newStatus },
+      include: { 
+        client: { include: { profile: true } }, 
+        caregiver: { include: { profile: true } } 
+      } 
+    });
+
+    const clientName = booking.client.profile ? `${booking.client.profile.firstName} ${booking.client.profile.lastName}` : `ID: ${booking.clientId}`;
+    const caregiverName = booking.caregiver.profile ? `${booking.caregiver.profile.firstName} ${booking.caregiver.profile.lastName}` : `ID: ${booking.caregiverId}`;
 
     // 1. Log for the Admin (The Performer)
     await prisma.auditLog.create({
-      data: { action: `BOOKING_${action.toUpperCase()}`, userId: req.user?.id, details: `Admin ${action}d booking ${id} (Client: ${booking.clientId}, Caregiver: ${booking.caregiverId})` }
+      data: { 
+        action: `BOOKING_${action.toUpperCase()}`, 
+        userId: req.user?.id, 
+        details: `Admin ${action}d booking ${id} (Assigned Caregiver: ${caregiverName} to Client: ${clientName})` 
+      }
     });
 
-    // 2. Log for the Client (The Requester)
+    // 2. Log for the Client
     await prisma.auditLog.create({
-      data: { action: `BOOKING_${newStatus}`, userId: booking.clientId, details: `Admin ${action}d your booking request` }
+      data: { action: `BOOKING_${newStatus}`, userId: booking.clientId, details: `Admin ${action}d your booking with ${caregiverName}` }
     });
 
-    // 3. Log for the Caregiver (The Provider)
+    // 3. Log for the Caregiver
     await prisma.auditLog.create({
-      data: { action: `BOOKING_${newStatus}`, userId: booking.caregiverId, details: `Admin ${action}d the booking assigned to you` }
+      data: { action: `BOOKING_${newStatus}`, userId: booking.caregiverId, details: `Admin ${action}d your booking with ${clientName}` }
     });
 
     res.json({ message: `Booking ${action}d` });

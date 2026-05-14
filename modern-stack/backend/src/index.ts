@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { auditMiddleware } from './middlewares/audit.middleware';
+import { authMiddleware } from './middlewares/auth.middleware';
 import authRoutes from './routes/auth.routes';
 import apiRoutes from './routes/api.routes';
 import { PrismaClient } from '@prisma/client';
@@ -16,6 +17,7 @@ const prisma = new PrismaClient();
 // Middleware
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+app.use(authMiddleware);
 app.use(auditMiddleware);
 
 // Routes — mount auth at /api and all other endpoints at /api
