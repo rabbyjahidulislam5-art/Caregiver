@@ -12,6 +12,17 @@ export default function Landing() {
 
   return (
     <div style={{ overflowX: 'hidden' }}>
+      {/* ── TOP NAVBAR ─────────────────────────────────────── */}
+      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, padding: '20px 5%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} onClick={() => navigate('/')}>
+          <div style={{ width: 36, height: 36, background: 'var(--gradient-primary)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, boxShadow: '0 4px 20px rgba(59,130,246,0.4)' }}>📘</div>
+          <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.5px' }}>Caregiver<span style={{ color: 'var(--accent-blue)' }}>GO</span></span>
+        </div>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <button className="btn btn-ghost" style={{ padding: '8px 20px' }} onClick={() => navigate('/login')}>Login</button>
+          <button className="btn btn-primary" style={{ padding: '8px 24px', borderRadius: 100 }} onClick={() => navigate('/register')}>Sign Up Free</button>
+        </div>
+      </nav>
       {/* ── HERO SECTION ───────────────────────────────────── */}
       <section style={{ 
         minHeight: '100vh', 
@@ -19,7 +30,7 @@ export default function Landing() {
         alignItems: 'center', 
         justifyContent: 'center',
         position: 'relative',
-        padding: '0 5%',
+        padding: '80px 5% 0 5%',
         background: 'var(--bg-primary)',
         overflow: 'hidden'
       }}>
@@ -100,12 +111,14 @@ export default function Landing() {
           </div>
           
           <div ref={feature2Reveal.ref} className={`reveal-right ${feature2Reveal.show ? 'show' : ''}`} style={{ flex: '1 1 400px', position: 'relative' }}>
-            <div className="glass-card" style={{ padding: 40, borderRadius: 32, position: 'relative', zIndex: 2, background: 'rgba(30, 41, 59, 0.4)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ fontSize: 64, marginBottom: 24 }}>🛡️</div>
-              <h3 style={{ fontSize: 28, fontWeight: 700, marginBottom: 16 }}>Safety First</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 18, lineHeight: 1.6 }}>Our multi-step verification process guarantees peace of mind for every family we serve.</p>
+            <div style={{ position: 'relative', borderRadius: 32, overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', height: 400 }}>
+              <img src="https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?q=80&w=1200&auto=format&fit=crop" alt="Caring professional" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 30, background: 'linear-gradient(to top, rgba(15,23,42,0.95), transparent)' }}>
+                <h3 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, color: 'white' }}>Safety First 🛡️</h3>
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 16, lineHeight: 1.5 }}>Our multi-step verification process guarantees peace of mind.</p>
+              </div>
             </div>
-            <div style={{ position: 'absolute', top: -30, right: -30, width: '100%', height: '100%', background: 'var(--gradient-primary)', filter: 'blur(80px)', opacity: 0.2, zIndex: 1, borderRadius: 32 }} />
+            <div style={{ position: 'absolute', top: -30, right: -30, width: '100%', height: '100%', background: 'var(--gradient-primary)', filter: 'blur(80px)', opacity: 0.2, zIndex: -1, borderRadius: 32 }} />
           </div>
         </div>
       </section>
@@ -115,12 +128,14 @@ export default function Landing() {
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 80, flexWrap: 'wrap-reverse' }}>
           
           <div ref={feature3Reveal.ref} className={`reveal-scale ${feature3Reveal.show ? 'show' : ''}`} style={{ flex: '1 1 400px', position: 'relative' }}>
-             <div className="glass-card" style={{ padding: 40, borderRadius: 32, position: 'relative', zIndex: 2, background: 'rgba(30, 41, 59, 0.4)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ fontSize: 64, marginBottom: 24 }}>⚡</div>
-              <h3 style={{ fontSize: 28, fontWeight: 700, marginBottom: 16 }}>Instant Booking</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 18, lineHeight: 1.6 }}>Find the right match and secure their services in just a few clicks.</p>
+            <div style={{ position: 'relative', borderRadius: 32, overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', height: 400 }}>
+              <img src="https://images.unsplash.com/photo-1581579205115-8d597df99645?q=80&w=1200&auto=format&fit=crop" alt="Smiling caregiver" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 30, background: 'linear-gradient(to top, rgba(15,23,42,0.95), transparent)' }}>
+                <h3 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, color: 'white' }}>Instant Booking ⚡</h3>
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 16, lineHeight: 1.5 }}>Find the right match and secure their services in just a few clicks.</p>
+              </div>
             </div>
-            <div style={{ position: 'absolute', bottom: -30, left: -30, width: '100%', height: '100%', background: 'var(--gradient-secondary)', filter: 'blur(80px)', opacity: 0.2, zIndex: 1, borderRadius: 32 }} />
+            <div style={{ position: 'absolute', bottom: -30, left: -30, width: '100%', height: '100%', background: 'var(--gradient-secondary)', filter: 'blur(80px)', opacity: 0.2, zIndex: -1, borderRadius: 32 }} />
           </div>
 
           <div ref={ctaReveal.ref} className={`reveal-right ${ctaReveal.show ? 'show' : ''}`} style={{ flex: '1 1 500px' }}>
