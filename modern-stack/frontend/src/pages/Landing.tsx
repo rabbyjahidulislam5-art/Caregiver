@@ -121,7 +121,7 @@ export default function Landing() {
           
           <div ref={feature3Reveal.ref} className={`reveal-scale ${feature3Reveal.show ? 'show' : ''}`} style={{ flex: '1 1 400px', position: 'relative' }}>
             <div style={{ position: 'relative', borderRadius: 32, overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', height: 400 }}>
-              <img src="https://images.unsplash.com/photo-1576091160550-2173ff9e5ee5?q=80&w=1200&auto=format&fit=crop" alt="Smiling caregiver" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src="https://images.pexels.com/photos/3768131/pexels-photo-3768131.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Smiling caregiver" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 30, background: 'linear-gradient(to top, rgba(15,23,42,0.95), transparent)' }}>
                 <h3 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, color: 'white' }}>Instant Booking ⚡</h3>
                 <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 16, lineHeight: 1.5 }}>Find the right match and secure their services in just a few clicks.</p>
