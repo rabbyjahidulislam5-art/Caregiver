@@ -284,7 +284,20 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
   };
 
   const getLogsForActions = (actions: string[]) => {
-    const entityLogs = auditLogs.filter(l => l.userId === selectedEntityId);
+    const selectedEmail = deletedEntities.find(e => e.userId === selectedEntityId)?.email;
+    
+    const entityLogs = auditLogs.filter(l => {
+      // Direct match by ID
+      if (l.userId === selectedEntityId) return true;
+      // Fallback match by Email in details (crucial for deleted users)
+      if (!l.userId && selectedEmail) {
+        const details = (l.details || '').toLowerCase();
+        const searchEmail = selectedEmail.toLowerCase();
+        if (details.includes(searchEmail)) return true;
+      }
+      return false;
+    });
+
     return entityLogs.filter(log => {
       const details = log.details || '';
       return actions.some(kw => log.action.toUpperCase().includes(kw) || details.toUpperCase().includes(kw));
