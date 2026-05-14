@@ -76,14 +76,6 @@ export default function Landing() {
             </button>
           </div>
         </div>
-
-        {/* Scroll Indicator */}
-        <div style={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, opacity: 0.6 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 2 }}>Scroll</span>
-          <div style={{ width: 24, height: 40, border: '2px solid rgba(255,255,255,0.3)', borderRadius: 20, display: 'flex', justifyContent: 'center', paddingTop: 6 }}>
-            <div style={{ width: 4, height: 8, background: 'white', borderRadius: 4, animation: 'scrollDot 1.5s infinite' }} />
-          </div>
-        </div>
       </section>
 
       {/* ── STORY SECTION 1 ─────────────────────────────────── */}
@@ -129,7 +121,7 @@ export default function Landing() {
           
           <div ref={feature3Reveal.ref} className={`reveal-scale ${feature3Reveal.show ? 'show' : ''}`} style={{ flex: '1 1 400px', position: 'relative' }}>
             <div style={{ position: 'relative', borderRadius: 32, overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', height: 400 }}>
-              <img src="https://images.unsplash.com/photo-1581579205115-8d597df99645?q=80&w=1200&auto=format&fit=crop" alt="Smiling caregiver" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src="https://images.unsplash.com/photo-1576091160550-2173ff9e5ee5?q=80&w=1200&auto=format&fit=crop" alt="Smiling caregiver" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 30, background: 'linear-gradient(to top, rgba(15,23,42,0.95), transparent)' }}>
                 <h3 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, color: 'white' }}>Instant Booking ⚡</h3>
                 <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 16, lineHeight: 1.5 }}>Find the right match and secure their services in just a few clicks.</p>

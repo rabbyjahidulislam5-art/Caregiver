@@ -5,10 +5,10 @@ export default function Footer() {
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
 
   const quickLinks = [
-    { label: 'Find a Caregiver', href: '/' },
-    { label: 'Login', href: '/login' },
-    { label: 'Register', href: '/register' },
-    { label: 'Our Services', href: '/#services' },
+    { label: 'Home', href: '/' },
+    { label: 'Privacy Policy', href: '/privacy-policy' },
+    { label: 'Terms of Service', href: '/terms-of-service' },
+    { label: 'Cookie Policy', href: '/cookie-policy' },
   ];
 
   const services = [
