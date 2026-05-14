@@ -155,8 +155,10 @@ export const reviewBookingRequest = async (req: Request, res: Response) => {
       } 
     });
 
-    const clientName = booking.client.profile ? `${booking.client.profile.firstName} ${booking.client.profile.lastName}` : `ID: ${booking.clientId}`;
-    const caregiverName = booking.caregiver.profile ? `${booking.caregiver.profile.firstName} ${booking.caregiver.profile.lastName}` : `ID: ${booking.caregiverId}`;
+    const clientEmail = booking.client.email;
+    const caregiverEmail = booking.caregiver.email;
+    const clientName = booking.client.profile ? `${booking.client.profile.firstName} ${booking.client.profile.lastName} (${clientEmail})` : clientEmail;
+    const caregiverName = booking.caregiver.profile ? `${booking.caregiver.profile.firstName} ${booking.caregiver.profile.lastName} (${caregiverEmail})` : caregiverEmail;
 
     // 1. Log for the Admin (The Performer)
     await prisma.auditLog.create({

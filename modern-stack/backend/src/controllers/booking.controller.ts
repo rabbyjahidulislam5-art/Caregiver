@@ -16,11 +16,15 @@ export const createBooking = async (req: Request, res: Response) => {
       }
     });
 
+    const client = await prisma.user.findUnique({ where: { id: clientId } });
+    const caregiver = await prisma.user.findUnique({ where: { id: caregiverId }, include: { profile: true } });
+    const cgName = caregiver?.profile ? `${caregiver.profile.firstName} ${caregiver.profile.lastName}` : caregiver?.email || caregiverId;
+
     await prisma.auditLog.create({
       data: {
         action: 'BOOKING_CREATED',
         userId: clientId,
-        details: `Created pending booking request for Caregiver ${caregiverId}`
+        details: `Client ${client?.email || clientId} created a pending booking request for Caregiver: ${cgName}`
       }
     });
 
@@ -64,11 +68,15 @@ export const acceptBooking = async (req: Request, res: Response) => {
       data: { status: 'CAREGIVER_ACCEPTED' }
     });
 
+    const caregiver = await prisma.user.findUnique({ where: { id: booking.caregiverId } });
+    const client = await prisma.user.findUnique({ where: { id: booking.clientId }, include: { profile: true } });
+    const clientName = client?.profile ? `${client.profile.firstName} ${client.profile.lastName}` : client?.email || booking.clientId;
+
     await prisma.auditLog.create({
       data: {
         action: 'BOOKING_ACCEPTED',
         userId: booking.caregiverId,
-        details: `Accepted booking request from Client ${booking.clientId}`
+        details: `Caregiver ${caregiver?.email || booking.caregiverId} accepted booking request from Client: ${clientName}`
       }
     });
 
@@ -86,11 +94,15 @@ export const rejectBooking = async (req: Request, res: Response) => {
       data: { status: 'rejected' }
     });
 
+    const caregiver = await prisma.user.findUnique({ where: { id: booking.caregiverId } });
+    const client = await prisma.user.findUnique({ where: { id: booking.clientId }, include: { profile: true } });
+    const clientName = client?.profile ? `${client.profile.firstName} ${client.profile.lastName}` : client?.email || booking.clientId;
+
     await prisma.auditLog.create({
       data: {
         action: 'BOOKING_REJECTED',
         userId: booking.caregiverId,
-        details: `Rejected booking request from Client ${booking.clientId}`
+        details: `Caregiver ${caregiver?.email || booking.caregiverId} rejected booking request from Client: ${clientName}`
       }
     });
 
@@ -108,11 +120,15 @@ export const completeBooking = async (req: Request, res: Response) => {
       data: { status: 'completed' }
     });
 
+    const caregiver = await prisma.user.findUnique({ where: { id: booking.caregiverId } });
+    const client = await prisma.user.findUnique({ where: { id: booking.clientId }, include: { profile: true } });
+    const clientName = client?.profile ? `${client.profile.firstName} ${client.profile.lastName} (${client.email})` : client?.email || booking.clientId;
+
     await prisma.auditLog.create({
       data: {
         action: 'BOOKING_COMPLETED',
         userId: booking.caregiverId,
-        details: `Completed booking with Client ${booking.clientId}`
+        details: `Caregiver ${caregiver?.email || booking.caregiverId} completed booking with Client: ${clientName}`
       }
     });
 

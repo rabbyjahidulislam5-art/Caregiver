@@ -14,8 +14,9 @@ export const auditMiddleware = async (req: Request, res: Response, next: NextFun
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
       try {
         const userId = req.user?.id || null;
+        const userEmail = req.user?.email || 'System';
         const action = `${req.method} ${req.originalUrl}`;
-        const details = `Status: ${res.statusCode}. IP: ${req.ip}`;
+        const details = `User: ${userEmail}. Status: ${res.statusCode}. IP: ${req.ip}`;
 
         await prisma.auditLog.create({
           data: {

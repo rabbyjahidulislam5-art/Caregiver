@@ -74,14 +74,14 @@ export const login = async (req: Request, res: Response) => {
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) return res.status(401).json({ error: 'Invalid credentials' });
 
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign({ id: user.id, role: user.role, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
 
     // Audit log
     await prisma.auditLog.create({
       data: { action: 'USER_LOGIN', userId: user.id, details: `${user.role} logged in: ${email}` }
     });
 
-    res.json({ userId: user.id, role: user.role, token, message: 'Login successful' });
+    res.json({ userId: user.id, role: user.role, email: user.email, token, message: 'Login successful' });
   } catch (error: any) {
     res.status(500).json({ error: 'Login failed: ' + error.message });
   }

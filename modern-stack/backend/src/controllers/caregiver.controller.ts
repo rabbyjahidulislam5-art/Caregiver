@@ -177,11 +177,12 @@ export const updateProfile = async (req: Request, res: Response) => {
       await prisma.user.update({ where: { id: userId }, data: { phone } });
     }
 
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     await prisma.auditLog.create({
       data: {
         action: 'PROFILE_UPDATED',
         userId: userId,
-        details: `User updated their profile information`
+        details: `User ${user?.email || userId} updated their profile information`
       }
     });
 
