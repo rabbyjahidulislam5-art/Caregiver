@@ -54,8 +54,8 @@ export default function CaregiverDashboard() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        return showError('File too large', 'Please upload an image smaller than 2MB');
+      if (file.size > 5 * 1024 * 1024) {
+        return showError('File too large', 'Please upload an image smaller than 5MB');
       }
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -444,12 +444,8 @@ export default function CaregiverDashboard() {
                   <input className="input-glass" value={editForm.phone} onChange={e => setEditForm(p => ({ ...p, phone: e.target.value }))} />
                 </div>
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                  <label className="form-label">Profile Picture URL</label>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <input className="input-glass" value={editForm.profilePictureUrl} onChange={e => setEditForm(p => ({ ...p, profilePictureUrl: e.target.value }))} placeholder="https://example.com/image.jpg" style={{ flex: 1 }} />
-                    <span style={{ color: 'var(--text-secondary)', fontSize: 14 }}>OR</span>
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="input-glass" style={{ padding: '8px', flex: 1 }} />
-                  </div>
+                  <label className="form-label">Profile Picture (Optional)</label>
+                  <input type="file" accept="image/*" onChange={handleImageUpload} className="input-glass" style={{ padding: '8px', width: '100%' }} />
                 </div>
                 <button className="btn btn-primary btn-lg" onClick={handleUpdateProfile} style={{ width: '100%', marginTop: 8 }}>
                   💾 Save Profile Changes
