@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useModal } from '../components/ModalContext';
+import AuditDashboard from '../components/AuditDashboard';
 
 type Tab = 'dashboard' | 'users' | 'caregivers' | 'bookings' | 'complaints' | 'audit';
 
@@ -32,7 +33,7 @@ export default function AdminDashboard() {
     if (newTab === 'caregivers') loadPendingCaregivers();
     if (newTab === 'bookings') loadPendingBookings();
     if (newTab === 'complaints') loadComplaints();
-    if (newTab === 'audit') loadAuditLogs();
+    if (newTab === 'audit') { loadAuditLogs(); loadUsers(); }
     if (newTab === 'dashboard') loadStats();
   };
 
@@ -97,13 +98,6 @@ export default function AdminDashboard() {
     return 'badge badge-pending';
   };
 
-  const getActionColor = (action: string) => {
-    if (action.includes('LOGIN')) return { color: 'var(--accent-green)', bg: 'rgba(16,185,129,0.1)' };
-    if (action.includes('LOGOUT')) return { color: 'var(--accent-amber)', bg: 'rgba(245,158,11,0.1)' };
-    if (action.includes('DELETE')) return { color: 'var(--accent-red)', bg: 'rgba(239,68,68,0.1)' };
-    if (action.includes('APPROVED') || action.includes('REGISTER')) return { color: 'var(--accent-cyan)', bg: 'rgba(6,182,212,0.1)' };
-    return { color: 'var(--accent-blue)', bg: 'rgba(59,130,246,0.1)' };
-  };
 
   const statItems = [
     { value: stats.totalUsers || 0, label: 'Total Users', icon: '👥', color: '#3b82f6' },
@@ -325,30 +319,8 @@ export default function AdminDashboard() {
                 <h1>Security Audit Log</h1>
                 <p>Complete historical trail of all significant system actions.</p>
               </div>
-              <div className="glass-table-container">
-                <table className="glass-table">
-                  <thead><tr><th>Timestamp</th><th>System Action</th><th>User Identity</th><th>Details</th></tr></thead>
-                  <tbody>
-                    {auditLogs.map((log: any) => {
-                      const ac = getActionColor(log.action);
-                      return (
-                        <tr key={log.id}>
-                          <td style={{ fontSize: 13, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                            {new Date(log.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'medium' })}
-                          </td>
-                          <td>
-                            <span style={{ color: ac.color, background: ac.bg, padding: '4px 10px', borderRadius: 8, fontWeight: 800, fontSize: 12, letterSpacing: '0.8px', whiteSpace: 'nowrap' }}>
-                              {log.action}
-                            </span>
-                          </td>
-                          <td style={{ color: '#fff', fontWeight: 600 }}>{log.user?.email || 'SYSTEM'}</td>
-                          <td style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 360 }}>{log.details || '—'}</td>
-                        </tr>
-                      );
-                    })}
-                    {auditLogs.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>No activity logged yet.</td></tr>}
-                  </tbody>
-                </table>
+              <div style={{ marginTop: 20 }}>
+                <AuditDashboard users={users} auditLogs={auditLogs} />
               </div>
             </>
           )}
