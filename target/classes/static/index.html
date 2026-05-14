@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caregiver Marketplace</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+    <header>
+        <h1>CaregiverShare</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="login.html">Login</a>
+            <a href="register.html" class="cta">Register</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h2>Find the Perfect Caregiver for Your Loved Ones</h2>
+        <p>Professional, Verified, and Trusted Services.</p>
+    </section>
+
+    <!-- Filter Modal -->
+    <div id="filterModal" class="modal"
+        style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5);">
+        <div class="modal-content"
+            style="background:white; margin:10% auto; padding:20px; width:400px; border-radius:8px; position:relative;">
+            <span onclick="closeFilterModal()"
+                style="position:absolute; right:15px; top:10px; cursor:pointer; font-size:24px;">&times;</span>
+            <h3 style="color:#6a1b9a; text-align:center;">Advanced Filter</h3>
+
+            <label>Profession:</label>
+            <select id="filterProfession" style="width:100%; padding:8px; margin-bottom:10px;">
+                <option value="">Any</option>
+            </select>
+
+            <label>Min Experience (Years):</label>
+            <input type="number" id="filterExp" style="width:100%; padding:8px; margin-bottom:10px;"
+                placeholder="e.g. 2">
+
+            <label>Min Rating:</label>
+            <select id="filterRating" style="width:100%; padding:8px; margin-bottom:10px;">
+                <option value="">Any</option>
+                <option value="5">5 Stars</option>
+                <option value="4">4 Stars & Up</option>
+                <option value="3">3 Stars & Up</option>
+            </select>
+
+            <label>Availability:</label>
+            <select id="filterDay" style="width:100%; padding:8px; margin-bottom:20px;">
+                <option value="">Any Day</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+                <option value="Sunday">Sunday</option>
+            </select>
+
+            <button onclick="applyFilter()"
+                style="width:100%; background:#6a1b9a; color:white; padding:10px; border:none; border-radius:5px; cursor:pointer;">Apply
+                Filter</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Search Section -->
+        <div class="search-section" style="text-align: center; margin-bottom: 30px;">
+            <input type="text" id="homeSearchInput" placeholder="Search by Profession (e.g. Nurse)..."
+                style="padding: 10px; width: 300px; border: 1px solid #ccc; border-radius: 4px;">
+            <button id="homeSearchBtn" class="btn-primary"
+                style="padding: 10px 20px; background-color: #6a1b9a; color: white; border: none; border-radius: 4px; cursor: pointer;">Search</button>
+            <button id="homeFilterBtn" class="btn-secondary"
+                style="margin-left: 10px; padding: 10px 20px; background-color: #9c27b0; color: white; border: none; border-radius: 4px; cursor: pointer;">Filter
+                <i class="fas fa-filter"></i></button>
+        </div>
+
+        <h3>Featured Caregivers</h3>
+        <div class="caregiver-grid">
+            <p>Loading caregivers...</p>
+        </div>
+    </div>
+    <div id="reviewsListModal" class="modal"
+        style="display:none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
+        <div class="modal-content"
+            style="background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 50%; border-radius: 8px;">
+            <span class="close" onclick="document.getElementById('reviewsListModal').style.display='none'"
+                style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor:pointer;">&times;</span>
+            <h2 style="color: #6a1b9a;">Caregiver Reviews</h2>
+            <div id="reviewsListContainer" style="max-height: 400px; overflow-y: auto;">
+                <p>Loading reviews...</p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

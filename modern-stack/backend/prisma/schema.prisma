@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  client
+  caregiver
+  admin
+}
+
+enum BookingStatus {
+  pending
+  CAREGIVER_ACCEPTED
+  APPROVED_BY_ADMIN
+  REJECTED_BY_ADMIN
+  rejected
+  completed
+  cancelled
+}
+
+enum ComplaintStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role
+  email        String   @unique
+  phone        String?
+  bloodGroup   String?  @map("blood_group")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  profile            Profile?
+  clientBookings     Booking[]   @relation("ClientBookings")
+  caregiverBookings  Booking[]   @relation("CaregiverBookings")
+  reviewsGiven       Review[]    @relation("ReviewerReviews")
+  reviewsReceived    Review[]    @relation("CaregiverReviews")
+  complaintsFiled    Complaint[] @relation("ClientComplaints")
+  complaintsReceived Complaint[] @relation("CaregiverComplaints")
+  schedules          Schedule[]
+  auditLogs          AuditLog[]
+
+  @@map("users")
+}
+
+model Profile {
+  id                String   @id @default(uuid())
+  userId            String   @unique @map("user_id")
+  firstName         String?  @map("first_name")
+  lastName          String?  @map("last_name")
+  profilePictureUrl String?  @map("profile_picture_url")
+  presentAddress    String?  @map("present_address")
+  permanentAddress  String?  @map("permanent_address")
+  profession        String?
+  experienceYears   Int?     @map("experience_years")
+  rating            Float    @default(0.0)
+  isActive          Boolean  @default(true) @map("is_active")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Booking {
+  id          String        @id @default(uuid())
+  clientId    String        @map("client_id")
+  caregiverId String        @map("caregiver_id")
+  serviceDate DateTime      @map("service_date")
+  status      BookingStatus @default(pending)
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  client    User @relation("ClientBookings", fields: [clientId], references: [id])
+  caregiver User @relation("CaregiverBookings", fields: [caregiverId], references: [id])
+
+  @@map("bookings")
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  clientId    String   @map("client_id")
+  caregiverId String   @map("caregiver_id")
+  rating      Int
+  comment     String?
+  status      String   @default("published")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  client    User @relation("ReviewerReviews", fields: [clientId], references: [id])
+  caregiver User @relation("CaregiverReviews", fields: [caregiverId], references: [id])
+
+  @@map("reviews")
+}
+
+model Complaint {
+  id          String          @id @default(uuid())
+  clientId    String          @map("client_id")
+  caregiverId String          @map("caregiver_id")
+  description String
+  status      ComplaintStatus @default(PENDING)
+  date        DateTime        @default(now())
+  adminReply  String?         @map("admin_reply")
+
+  client    User @relation("ClientComplaints", fields: [clientId], references: [id])
+  caregiver User @relation("CaregiverComplaints", fields: [caregiverId], references: [id])
+
+  @@map("complaints")
+}
+
+model Schedule {
+  id          String  @id @default(uuid())
+  caregiverId String  @map("caregiver_id")
+  dayOfWeek   String  @map("day_of_week")
+  startTime   String  @map("start_time")
+  endTime     String  @map("end_time")
+  isAvailable Boolean @default(true) @map("is_available")
+
+  caregiver User @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@map("schedules")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  userId    String?  @map("user_id")
+  details   String?
+  timestamp DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}

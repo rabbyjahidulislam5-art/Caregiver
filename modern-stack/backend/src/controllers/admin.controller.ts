@@ -1,0 +1,208 @@
+import { Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+// GET /api/admin/users — All users with profile names
+export const getAllUsers = async (req: Request, res: Response) => {
+  try {
+    const users = await prisma.user.findMany({ include: { profile: true } });
+    const result = users.map(u => ({
+      userId: u.id,
+      email: u.email,
+      role: u.role,
+      firstName: u.profile?.firstName || 'N/A',
+      lastName: u.profile?.lastName || '',
+      profession: u.profile?.profession || null,
+    }));
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+};
+
+// DELETE /api/admin/users/:id
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    // Delete profile first (cascade should handle, but be explicit)
+    await prisma.profile.deleteMany({ where: { userId: id } });
+    await prisma.user.delete({ where: { id } });
+
+    await prisma.auditLog.create({
+      data: { action: 'USER_DELETED', userId: req.user?.id, details: `Deleted user ${id}` }
+    });
+
+    res.json({ message: 'User deleted' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+};
+
+// GET /api/admin/pending-caregivers
+export const getPendingCaregivers = async (req: Request, res: Response) => {
+  try {
+    const profiles = await prisma.profile.findMany({
+      where: { isActive: false, user: { role: 'caregiver' } },
+      include: { user: true }
+    });
+
+    const result = profiles.map(p => ({
+      profileId: p.id,
+      userId: p.userId,
+      firstName: p.firstName,
+      lastName: p.lastName,
+      email: p.user.email,
+      profession: p.profession,
+      experienceYears: p.experienceYears,
+    }));
+
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch pending caregivers' });
+  }
+};
+
+// PUT /api/admin/approve/:profileId
+export const approveCaregiver = async (req: Request, res: Response) => {
+  try {
+    const profileId = req.params.profileId as string;
+    await prisma.profile.update({ where: { id: profileId }, data: { isActive: true } });
+
+    await prisma.auditLog.create({
+      data: { action: 'CAREGIVER_APPROVED', userId: req.user?.id, details: `Approved caregiver profile ${profileId}` }
+    });
+
+    res.json({ message: 'Caregiver approved' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to approve caregiver' });
+  }
+};
+
+// GET /api/admin/requests/pending — Bookings pending admin review
+export const getPendingBookingRequests = async (req: Request, res: Response) => {
+  try {
+    const bookings = await prisma.booking.findMany({
+      where: { status: { in: ['CAREGIVER_ACCEPTED', 'pending'] } },
+      include: {
+        client: { include: { profile: true } },
+        caregiver: { include: { profile: true } },
+      }
+    });
+
+    const result = bookings.map(b => ({
+      bookingId: b.id,
+      status: b.status,
+      serviceDate: b.serviceDate,
+      clientName: b.client.profile ? `${b.client.profile.firstName} ${b.client.profile.lastName}` : `ID: ${b.clientId}`,
+      caregiverName: b.caregiver.profile ? `${b.caregiver.profile.firstName} ${b.caregiver.profile.lastName}` : `ID: ${b.caregiverId}`,
+    }));
+
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch pending requests' });
+  }
+};
+
+// POST /api/admin/requests/:id/:action (approve/reject)
+export const reviewBookingRequest = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    const action = String(req.params.action);
+    let newStatus: any;
+
+    if (action === 'approve') newStatus = 'APPROVED_BY_ADMIN';
+    else if (action === 'reject') newStatus = 'REJECTED_BY_ADMIN';
+    else return res.status(400).json({ error: 'Invalid action' });
+
+    await prisma.booking.update({ where: { id }, data: { status: newStatus } });
+
+    await prisma.auditLog.create({
+      data: { action: `BOOKING_${action.toUpperCase()}`, userId: req.user?.id, details: `${action} booking ${id}` }
+    });
+
+    res.json({ message: `Booking ${action}d` });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to review booking' });
+  }
+};
+
+// GET /api/admin/complaints — All complaints enriched
+export const getAllComplaints = async (req: Request, res: Response) => {
+  try {
+    const complaints = await prisma.complaint.findMany({
+      include: {
+        client: { include: { profile: true } },
+        caregiver: { include: { profile: true } },
+      }
+    });
+
+    const result = complaints.map(c => ({
+      id: c.id,
+      description: c.description,
+      status: c.status,
+      date: c.date,
+      adminReply: c.adminReply,
+      clientName: c.client.profile ? `${c.client.profile.firstName} ${c.client.profile.lastName}` : `ID: ${c.clientId}`,
+      clientEmail: c.client.email,
+      clientPhone: c.client.phone || 'N/A',
+      caregiverName: c.caregiver.profile ? `${c.caregiver.profile.firstName} ${c.caregiver.profile.lastName}` : `ID: ${c.caregiverId}`,
+      caregiverEmail: c.caregiver.email,
+      caregiverPhone: c.caregiver.phone || 'N/A',
+    }));
+
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch complaints' });
+  }
+};
+
+// PUT /api/admin/complaints/:id/reply
+export const replyToComplaint = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { reply } = req.body;
+
+    await prisma.complaint.update({
+      where: { id },
+      data: { adminReply: reply, status: 'REVIEWED' }
+    });
+
+    await prisma.auditLog.create({
+      data: { action: 'COMPLAINT_REPLIED', userId: req.user?.id, details: `Replied to complaint ${id}` }
+    });
+
+    res.json({ message: 'Reply sent' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to reply to complaint' });
+  }
+};
+
+// GET /api/admin/audit-logs
+export const getAuditLogs = async (req: Request, res: Response) => {
+  try {
+    const logs = await prisma.auditLog.findMany({
+      include: { user: { select: { email: true, role: true } } },
+      orderBy: { timestamp: 'desc' },
+      take: 200,
+    });
+    res.json(logs);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch audit logs' });
+  }
+};
+
+// GET /api/admin/stats
+export const getStats = async (req: Request, res: Response) => {
+  try {
+    const [totalUsers, totalBookings, totalComplaints, totalCaregivers] = await Promise.all([
+      prisma.user.count(),
+      prisma.booking.count(),
+      prisma.complaint.count(),
+      prisma.user.count({ where: { role: 'caregiver' } }),
+    ]);
+    res.json({ totalUsers, totalBookings, totalComplaints, totalCaregivers });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+};
