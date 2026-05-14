@@ -6,6 +6,8 @@ interface User {
   role: string;
   firstName: string;
   lastName: string;
+  phone?: string | null;
+  createdAt?: string;
 }
 
 interface AuditLog {
@@ -28,11 +30,15 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [selectedEntityRole, setSelectedEntityRole] = useState<string>('client');
 
+  // --- FILTERS ---
+  const [filterPhone, setFilterPhone] = useState<string>('');
+  const [filterDate, setFilterDate] = useState<string>('');
+
   // --- DATA PROCESSING ---
 
   const deletedEntities = useMemo(() => {
     const activeIds = new Set(users.map(u => u.userId));
-    const deletedMap = new Map<string, { userId: string, email: string, role: string, firstName: string, lastName: string, lastSeen: string }>();
+    const deletedMap = new Map<string, { userId: string, email: string, role: string, firstName: string, lastName: string, lastSeen: string, phone?: string | null, createdAt?: string }>();
 
     auditLogs.forEach(log => {
       if (log.userId && !activeIds.has(log.userId)) {
@@ -43,7 +49,9 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
             role: log.user?.role || 'Unknown',
             firstName: 'Deleted',
             lastName: 'User',
-            lastSeen: log.timestamp
+            lastSeen: log.timestamp,
+            phone: null,
+            createdAt: undefined
           });
         }
         
@@ -118,15 +126,19 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
 
   const goBack = () => {
     if (level === 3) setLevel(2);
-    else if (level === 2) { setLevel(1); setSelectedCategory(null); }
+    else if (level === 2) { 
+      setLevel(1); 
+      setSelectedCategory(null);
+      setFilterPhone('');
+      setFilterDate('');
+    }
   };
 
 
   // --- RENDERERS ---
 
   const renderLevel1 = () => (
-    <div>
-      <h1 style={{ color: 'red', fontSize: 40, background: 'yellow', padding: 20 }}>TESTING AUDIT DASHBOARD</h1>
+    <div className="reveal-scale">
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 40 }}>
         {[
           { key: 'Users', icon: '👥', color: 'var(--accent-blue)', desc: 'Active Clients' },
@@ -190,13 +202,58 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
   );
 
   const renderLevel2 = () => {
-    const list = selectedCategory ? categories[selectedCategory as keyof typeof categories] : [];
+    let list = selectedCategory ? categories[selectedCategory as keyof typeof categories] : [];
+    
+    // Apply Filters
+    if (filterPhone) {
+      list = list.filter(e => e.phone && e.phone.includes(filterPhone));
+    }
+    if (filterDate) {
+      list = list.filter(e => {
+        if (!e.createdAt) return false;
+        // e.createdAt is usually ISO string "YYYY-MM-DDThh:mm:ss"
+        return e.createdAt.startsWith(filterDate); 
+      });
+    }
+
     return (
       <div className="reveal-right">
         <button onClick={goBack} className="btn btn-ghost" style={{ marginBottom: 24, padding: '8px 16px', background: 'rgba(255,255,255,0.05)' }}>
           ← Back to Dashboard
         </button>
-        <h2 style={{ fontSize: 28, fontWeight: 800, marginBottom: 24, color: '#fff' }}>{selectedCategory} Directory</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20, marginBottom: 24 }}>
+          <h2 style={{ fontSize: 28, fontWeight: 800, color: '#fff', margin: 0 }}>{selectedCategory} Directory</h2>
+          
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 12, top: 10, opacity: 0.5 }}>📱</span>
+              <input 
+                type="text" 
+                placeholder="Filter by Phone..." 
+                value={filterPhone}
+                onChange={e => setFilterPhone(e.target.value)}
+                style={{ padding: '8px 12px 8px 36px', borderRadius: 12, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', outline: 'none', width: 200 }}
+              />
+            </div>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 12, top: 10, opacity: 0.5 }}>📅</span>
+              <input 
+                type="date" 
+                value={filterDate}
+                onChange={e => setFilterDate(e.target.value)}
+                style={{ padding: '8px 12px 8px 36px', borderRadius: 12, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', outline: 'none', width: 160 }}
+              />
+            </div>
+            {(filterPhone || filterDate) && (
+              <button 
+                onClick={() => { setFilterPhone(''); setFilterDate(''); }}
+                style={{ padding: '8px 16px', borderRadius: 12, background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.5)', color: '#fff', cursor: 'pointer' }}
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        </div>
         
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
           {list.map(entity => (
@@ -207,6 +264,8 @@ export default function AuditDashboard({ users, auditLogs }: AuditDashboardProps
               <div style={{ flex: 1, overflow: 'hidden' }}>
                 <h4 style={{ fontWeight: 700, color: '#fff', fontSize: 16, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{entity.firstName} {entity.lastName}</h4>
                 <p style={{ fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{entity.email}</p>
+                {entity.phone && <p style={{ fontSize: 11, color: 'var(--accent-blue)', marginTop: 2 }}>📞 {entity.phone}</p>}
+                {entity.createdAt && <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Registered: {new Date(entity.createdAt).toLocaleDateString()}</p>}
               </div>
               <span style={{ fontSize: 20, opacity: 0.5 }}>➔</span>
             </div>

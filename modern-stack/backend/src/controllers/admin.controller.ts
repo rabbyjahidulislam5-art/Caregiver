@@ -14,6 +14,8 @@ export const getAllUsers = async (req: Request, res: Response) => {
       firstName: u.profile?.firstName || 'N/A',
       lastName: u.profile?.lastName || '',
       profession: u.profile?.profession || null,
+      phone: u.phone || null,
+      createdAt: u.createdAt,
     }));
     res.json(result);
   } catch (error: any) {
