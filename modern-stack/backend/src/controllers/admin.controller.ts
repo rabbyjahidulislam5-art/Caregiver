@@ -29,8 +29,10 @@ export const deleteUser = async (req: Request, res: Response) => {
     const id = req.params.id as string;
 
     // Fetch user email for the audit log before they are gone
-    const targetUser = await prisma.user.findUnique({ where: { id } });
+    const targetUser = await prisma.user.findUnique({ where: { id }, include: { profile: true } });
     const userIdentifier = targetUser?.email || id;
+    const roleName = targetUser?.role || 'user';
+    const fullName = targetUser?.profile ? `${targetUser.profile.firstName} ${targetUser.profile.lastName}` : 'Unknown Name';
 
     // Manually delete all dependent records to avoid foreign key constraints
     await prisma.profile.deleteMany({ where: { userId: id } });
@@ -47,7 +49,7 @@ export const deleteUser = async (req: Request, res: Response) => {
       data: { 
         action: 'USER_DELETED', 
         userId: req.user?.id, 
-        details: `Admin deleted user: ${userIdentifier} (ID: ${id})` 
+        details: `Admin deleted ${roleName} ${fullName} (${userIdentifier}) (ID: ${id})` 
       }
     });
 
@@ -269,18 +271,19 @@ export const getStats = async (req: Request, res: Response) => {
 export const deleteSelf = async (req: Request, res: Response) => {
   try {
     const id = req.params.userId as string;
-    const targetUser = await prisma.user.findUnique({ where: { id } });
+    const targetUser = await prisma.user.findUnique({ where: { id }, include: { profile: true } });
     if (!targetUser) return res.status(404).json({ error: 'User not found' });
 
     const userEmail = targetUser.email;
     const userRole = targetUser.role;
+    const fullName = targetUser.profile ? `${targetUser.profile.firstName} ${targetUser.profile.lastName}` : 'Unknown Name';
 
     // Write deletion audit log FIRST (before cascade, so userId is still valid)
     await prisma.auditLog.create({
       data: {
         action: 'USER_DELETED',
         userId: id,
-        details: `${userRole} ${userEmail} voluntarily deleted their own account (ID: ${id})`,
+        details: `${userRole} ${fullName} (${userEmail}) voluntarily deleted their own account (ID: ${id})`,
       }
     });
 

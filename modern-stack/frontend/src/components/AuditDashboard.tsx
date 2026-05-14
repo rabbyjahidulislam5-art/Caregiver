@@ -69,11 +69,35 @@ export default function AuditDashboard({ users, auditLogs }: Props) {
         });
       }
       if (log.action === 'USER_DELETED') {
-        const em = (log.details||'').match(/user:\s*([^\s(]+)/)?.[1];
-        const id = (log.details||'').match(/\(ID:\s*([^)]+)\)/)?.[1] || `del-${log.id}`;
+        const details = log.details || '';
+        const role = details.toLowerCase().includes('caregiver') ? 'caregiver' : 'client';
+        
+        let em = 'Unknown';
+        const emMatch = details.match(/\(([^)]+@[^)]+)\)/);
+        if (emMatch) em = emMatch[1];
+        else {
+          const oldEmMatch = details.match(/user:\s*([^\s(]+)/);
+          if (oldEmMatch) em = oldEmMatch[1];
+        }
+
+        const id = details.match(/\(ID:\s*([^)]+)\)/)?.[1] || `del-${log.id}`;
+
+        let fullName = 'Deleted Profile';
+        if (details.includes('Admin deleted ') && !details.includes('user:')) {
+           const match = details.match(/Admin deleted \w+ ([^(]+) \(/);
+           if (match) fullName = match[1].trim();
+        } else if (details.includes('voluntarily deleted')) {
+           const match = details.match(/^\w+ ([^(]+) \(/);
+           if (match) fullName = match[1].trim();
+        }
+
+        const nameParts = fullName.split(' ');
+        const firstName = nameParts[0] || 'Deleted';
+        const lastName = nameParts.slice(1).join(' ');
+
         if (!map.has(id)) map.set(id, {
-          userId: id, email: em || 'Unknown', role: (log.details||'').toLowerCase().includes('caregiver') ? 'caregiver' : 'client',
-          firstName: 'Deleted', lastName: 'Profile', lastSeen: log.timestamp, phone: null,
+          userId: id, email: em, role,
+          firstName, lastName, lastSeen: log.timestamp, phone: null,
         });
       }
     });
