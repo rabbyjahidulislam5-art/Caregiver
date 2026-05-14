@@ -1,18 +1,18 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ModalProvider } from './components/ModalContext';
-import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ClientDashboard from './pages/ClientDashboard';
 import CaregiverDashboard from './pages/CaregiverDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import Landing from './pages/Landing';
 
 function App() {
   return (
     <ModalProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/client" element={<ClientDashboard />} />
