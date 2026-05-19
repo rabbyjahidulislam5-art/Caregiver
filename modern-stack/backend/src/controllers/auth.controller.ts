@@ -129,6 +129,12 @@ export const getProfile = async (req: Request, res: Response) => {
       lastName: profile.lastName,
       permanentAddress: profile.permanentAddress,
       bloodGroup: user.bloodGroup,
+      nidNumber: profile.nidNumber,
+      nidFrontUrl: profile.nidFrontUrl,
+      nidBackUrl: profile.nidBackUrl,
+      certificateUrl: profile.certificateUrl,
+      policeClearanceUrl: profile.policeClearanceUrl,
+      kycStatus: profile.kycStatus,
     });
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to get profile' });
