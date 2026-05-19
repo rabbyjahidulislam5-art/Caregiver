@@ -470,6 +470,13 @@ export default function AdminDashboard() {
                       <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>KYC Status</div><span className={getBadgeClass(selectedUserDetail.kycStatus)}>{selectedUserDetail.kycStatus}</span></div>
                       {selectedUserDetail.nidNumber && <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>NID Number</div><div style={{ color: '#f8fafc', fontSize: 15 }}>{selectedUserDetail.nidNumber}</div></div>}
                       
+                      {selectedUserDetail.selfieUrl && (
+                        <div>
+                          <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Live Selfie Photo</div>
+                          <img src={selectedUserDetail.selfieUrl} alt="selfie" style={{ width: 120, height: 120, borderRadius: 16, objectFit: 'cover', border: '2px solid rgba(255,255,255,0.1)' }} />
+                        </div>
+                      )}
+                      
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
                         {selectedUserDetail.nidFrontUrl && <a href={selectedUserDetail.nidFrontUrl} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '6px 12px' }}>📄 NID Front</a>}
                         {selectedUserDetail.nidBackUrl && <a href={selectedUserDetail.nidBackUrl} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '6px 12px' }}>📄 NID Back</a>}

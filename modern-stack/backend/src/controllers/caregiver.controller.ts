@@ -158,12 +158,12 @@ export const updateProfile = async (req: Request, res: Response) => {
   try {
     const userId = req.params.userId as string;
     const { firstName, lastName, profession, experienceYears, address, phone, profilePictureUrl,
-            gender, dob, emergencyContact, nidNumber, nidFrontUrl, nidBackUrl, certificateUrl, policeClearanceUrl, kycStatus } = req.body;
-
+            gender, dob, emergencyContact, nidNumber, nidFrontUrl, nidBackUrl, certificateUrl, policeClearanceUrl, selfieUrl, kycStatus } = req.body;
+ 
     const profile = await prisma.profile.findUnique({ where: { userId } });
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!profile || !user) return res.status(404).json({ error: 'Profile not found' });
-
+ 
     const changedFields: string[] = [];
     if (firstName !== undefined && firstName !== profile.firstName) changedFields.push('First Name');
     if (lastName !== undefined && lastName !== profile.lastName) changedFields.push('Last Name');
@@ -182,8 +182,9 @@ export const updateProfile = async (req: Request, res: Response) => {
     if (nidBackUrl !== undefined && nidBackUrl !== profile.nidBackUrl) changedFields.push('NID Back');
     if (certificateUrl !== undefined && certificateUrl !== profile.certificateUrl) changedFields.push('Certificate');
     if (policeClearanceUrl !== undefined && policeClearanceUrl !== profile.policeClearanceUrl) changedFields.push('Police Clearance');
+    if (selfieUrl !== undefined && selfieUrl !== profile.selfieUrl) changedFields.push('Selfie Photo');
     if (kycStatus !== undefined && kycStatus !== profile.kycStatus) changedFields.push('KYC Status');
-
+ 
     if (changedFields.length > 0) {
       await prisma.profile.update({
         where: { userId },
@@ -202,10 +203,11 @@ export const updateProfile = async (req: Request, res: Response) => {
           ...(nidBackUrl !== undefined && { nidBackUrl }),
           ...(certificateUrl !== undefined && { certificateUrl }),
           ...(policeClearanceUrl !== undefined && { policeClearanceUrl }),
+          ...(selfieUrl !== undefined && { selfieUrl }),
           ...(kycStatus !== undefined && { kycStatus }),
         }
       });
-
+ 
       if (phone !== undefined && phone !== user.phone) {
         await prisma.user.update({ where: { id: userId }, data: { phone } });
       }

@@ -28,6 +28,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
       nidBackUrl: u.profile?.nidBackUrl || null,
       certificateUrl: u.profile?.certificateUrl || null,
       policeClearanceUrl: u.profile?.policeClearanceUrl || null,
+      selfieUrl: u.profile?.selfieUrl || null,
       kycStatus: u.profile?.kycStatus || 'PENDING',
     }));
     res.json(result);

@@ -134,6 +134,7 @@ export const getProfile = async (req: Request, res: Response) => {
       nidBackUrl: profile.nidBackUrl,
       certificateUrl: profile.certificateUrl,
       policeClearanceUrl: profile.policeClearanceUrl,
+      selfieUrl: profile.selfieUrl,
       kycStatus: profile.kycStatus,
     });
   } catch (error: any) {

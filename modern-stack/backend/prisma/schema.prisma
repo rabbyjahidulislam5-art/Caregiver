@@ -75,6 +75,7 @@ model Profile {
   nidBackUrl         String?  @map("nid_back_url")
   certificateUrl     String?  @map("certificate_url")
   policeClearanceUrl String?  @map("police_clearance_url")
+  selfieUrl          String?  @map("selfie_url")
   kycStatus          String   @default("PENDING") @map("kyc_status")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

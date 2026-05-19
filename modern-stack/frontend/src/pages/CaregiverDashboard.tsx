@@ -15,7 +15,9 @@ export default function CaregiverDashboard() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [newSchedule, setNewSchedule] = useState({ dayOfWeek: 'Monday', startTime: '09:00', endTime: '17:00' });
   const [editForm, setEditForm] = useState({ firstName: '', lastName: '', profession: '', experienceYears: '', address: '', phone: '', profilePictureUrl: '' });
-  const [kycForm, setKycForm] = useState({ nidNumber: '', nidFrontUrl: '', nidBackUrl: '', certificateUrl: '', policeClearanceUrl: '' });
+  const [kycForm, setKycForm] = useState({ nidNumber: '', nidFrontUrl: '', nidBackUrl: '', certificateUrl: '', policeClearanceUrl: '', selfieUrl: '' });
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [animationKey, setAnimationKey] = useState(0);
 
   // Caregiver Interactive Calendar States
@@ -64,9 +66,58 @@ export default function CaregiverDashboard() {
         nidFrontUrl: p.nidFrontUrl || '',
         nidBackUrl: p.nidBackUrl || '',
         certificateUrl: p.certificateUrl || '',
-        policeClearanceUrl: p.policeClearanceUrl || ''
+        policeClearanceUrl: p.policeClearanceUrl || '',
+        selfieUrl: p.selfieUrl || ''
       });
     } catch {}
+  };
+
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [cameraStream]);
+ 
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 400, height: 400, facingMode: 'user' } });
+      setCameraStream(stream);
+      setIsCameraActive(true);
+      setTimeout(() => {
+        const video = document.getElementById('webcam-video') as HTMLVideoElement;
+        if (video) video.srcObject = stream;
+      }, 100);
+    } catch (e: any) {
+      showError('Camera Error', 'Could not access camera: ' + e.message);
+    }
+  };
+ 
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setIsCameraActive(false);
+  };
+ 
+  const capturePhoto = () => {
+    const video = document.getElementById('webcam-video') as HTMLVideoElement;
+    if (video) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 400;
+      canvas.height = 400;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.translate(400, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, 400, 400);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        setKycForm(prev => ({ ...prev, selfieUrl: dataUrl }));
+        stopCamera();
+      }
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,8 +202,8 @@ export default function CaregiverDashboard() {
   };
 
   const handleSubmitKyc = async () => {
-    if (!kycForm.nidNumber || !kycForm.nidFrontUrl || !kycForm.nidBackUrl) {
-      return showError('Missing Fields', 'Please provide at least your NID Number and both NID images.');
+    if (!kycForm.nidNumber || !kycForm.nidFrontUrl || !kycForm.nidBackUrl || !kycForm.selfieUrl) {
+      return showError('Missing Fields', 'Please provide your NID Number, both NID images, and capture a live selfie photo.');
     }
     try {
       await api.put(`/update-profile/${userId}`, { ...kycForm, kycStatus: 'SUBMITTED' });
@@ -675,6 +726,45 @@ export default function CaregiverDashboard() {
                     <input type="file" accept="image/*" className="input-glass" style={{ padding: '8px' }} onChange={e => handleKycUpload(e, 'nidBackUrl')} disabled={profile?.kycStatus === 'APPROVED' || profile?.kycStatus === 'SUBMITTED'} />
                     {kycForm.nidBackUrl && <div style={{ marginTop: 8, fontSize: 12, color: 'var(--accent-green)' }}>✓ Uploaded</div>}
                   </div>
+                </div>
+
+                {/* Live Face Verification Selfie */}
+                <div className="form-group" style={{ marginBottom: 24 }}>
+                  <label className="form-label">Real-time Selfie Photo (Face Verification) *</label>
+                  
+                  {isCameraActive ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.02)', padding: 20, borderRadius: 16, border: '1px solid var(--border-glass)' }}>
+                      <div style={{ position: 'relative', width: 220, height: 220, borderRadius: '50%', overflow: 'hidden', border: '4px solid var(--accent-blue)', boxShadow: '0 0 20px rgba(59,130,246,0.3)' }}>
+                        <video id="webcam-video" autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }}></video>
+                      </div>
+                      <div style={{ display: 'flex', gap: 12 }}>
+                        <button className="btn btn-primary" onClick={capturePhoto} style={{ fontSize: 13, padding: '8px 16px' }}>📸 Capture Photo</button>
+                        <button className="btn btn-ghost" onClick={stopCamera} style={{ fontSize: 13, padding: '8px 16px', color: '#f87171' }}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 20, background: 'rgba(255,255,255,0.01)', padding: 16, borderRadius: 16, border: '1px dashed var(--border-glass-strong)' }}>
+                      {kycForm.selfieUrl ? (
+                        <img src={kycForm.selfieUrl} alt="selfie" style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--accent-green)' }} />
+                      ) : (
+                        <div style={{ width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>👤</div>
+                      )}
+                      
+                      <div>
+                        {kycForm.selfieUrl ? (
+                          <div style={{ color: 'var(--accent-green)', fontWeight: 600, fontSize: 14, marginBottom: 6 }}>✓ Live Selfie Captured Successfully</div>
+                        ) : (
+                          <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 8 }}>Please take a clear photo of your face using your webcam.</div>
+                        )}
+                        
+                        {(profile?.kycStatus === 'PENDING' || profile?.kycStatus === 'REJECTED') && (
+                          <button className="btn btn-ghost btn-sm" onClick={startCamera} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, padding: '8px 16px' }}>
+                            📷 {kycForm.selfieUrl ? 'Retake Photo' : 'Open Camera & Capture'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group">
