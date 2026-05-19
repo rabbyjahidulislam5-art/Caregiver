@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useModal } from '../components/ModalContext';
+import CaregiverMap from '../components/CaregiverMap';
 
 type Tab = 'dashboard' | 'search' | 'bookings' | 'history' | 'complaints' | 'profile' | 'notifications';
 
@@ -14,12 +15,19 @@ export default function ClientDashboard() {
   const [complaints, setComplaints] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [bookingDate, setBookingDate] = useState('');
   const [complaintDesc, setComplaintDesc] = useState('');
   const [complaintCaregiverId, setComplaintCaregiverId] = useState('');
   const [reviewData, setReviewData] = useState({ caregiverId: '', rating: 5, comment: '' });
   const [animationKey, setAnimationKey] = useState(0);
   const [editForm, setEditForm] = useState({ firstName: '', lastName: '', phone: '', address: '', profilePictureUrl: '' });
+
+  // Interactive Booking Calendar States
+  const [showBookingCalendarModal, setShowBookingCalendarModal] = useState(false);
+  const [selectedCaregiverForBooking, setSelectedCaregiverForBooking] = useState<any>(null);
+  const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
+  const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
 
   const navigate = useNavigate();
   const { showSuccess, showError, showConfirm } = useModal();
@@ -77,13 +85,40 @@ export default function ClientDashboard() {
   const searchCaregivers = async () => { try { setCaregivers(await api.get(`/caregivers/search?profession=${searchQuery}`)); } catch {} };
 
   const handleBook = (caregiverId: string) => {
-    if (!bookingDate) return showError('Missing Date', 'Please select a service date');
-    showConfirm('Confirm Booking', 'Do you want to book this caregiver?', async () => {
+    const cg = caregivers.find(c => c.userId === caregiverId);
+    if (!cg) return;
+    setSelectedCaregiverForBooking(cg);
+    setCalendarYear(new Date().getFullYear());
+    setCalendarMonth(new Date().getMonth());
+    setSelectedCalendarDate(null);
+    setSelectedTimeSlot('');
+    setShowBookingCalendarModal(true);
+  };
+
+  const confirmCalendarBooking = async () => {
+    if (!selectedCaregiverForBooking || !selectedCalendarDate || !selectedTimeSlot) {
+      return showError('Selection Required', 'Please select a date and time slot.');
+    }
+    
+    // Parse the date and timeslot (e.g. "09:00 - 10:00")
+    const [startHourStr] = selectedTimeSlot.split(' - ');
+    const [hour, min] = startHourStr.split(':').map(Number);
+    
+    const serviceDate = new Date(selectedCalendarDate);
+    serviceDate.setHours(hour, min, 0, 0);
+    
+    showConfirm('Confirm Booking', `Do you want to book ${selectedCaregiverForBooking.firstName} for ${serviceDate.toLocaleString()}?`, async () => {
       try {
-        await api.post('/book', { clientId: userId, caregiverId, serviceDate: new Date(bookingDate).toISOString() });
+        await api.post('/book', {
+          clientId: userId,
+          caregiverId: selectedCaregiverForBooking.userId,
+          serviceDate: serviceDate.toISOString()
+        });
         showSuccess('Booked!', 'Your booking request has been sent.');
-        setBookingDate('');
-      } catch (err: any) { showError('Booking Failed', err.message); }
+        setShowBookingCalendarModal(false);
+      } catch (err: any) {
+        showError('Booking Failed', err.message);
+      }
     });
   };
 
@@ -256,15 +291,16 @@ export default function ClientDashboard() {
                       <button className="btn btn-primary" onClick={searchCaregivers}>Search 🔍</button>
                     </div>
                   </div>
-                  <div style={{ flex: '1 1 220px' }}>
-                    <label className="form-label">Desired Service Date</label>
-                    <input className="input-glass" type="datetime-local" value={bookingDate} onChange={e => setBookingDate(e.target.value)} />
-                  </div>
                   <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                     <button className="btn btn-ghost" onClick={async () => { setCaregivers(await api.get('/caregivers')); }}>Show All 🌟</button>
                   </div>
                 </div>
               </div>
+
+              {caregivers.length > 0 && (
+                <CaregiverMap caregivers={caregivers} onBookClick={(cgId) => handleBook(cgId)} />
+              )}
+
               <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 22 }}>
                 {caregivers.map(cg => (
                   <div key={cg.userId} className="glass-card" style={{ padding: 24, display: 'flex', flexDirection: 'column' }}>
@@ -537,6 +573,175 @@ export default function ClientDashboard() {
               </div>
             </>
           )}
+
+
+      {/* BOOKING CALENDAR MODAL */}
+      {showBookingCalendarModal && selectedCaregiverForBooking && (() => {
+        const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+        const firstDayIndex = new Date(calendarYear, calendarMonth, 1).getDay();
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        const calendarCells = [];
+        for (let i = 0; i < firstDayIndex; i++) {
+          calendarCells.push(null);
+        }
+        for (let day = 1; day <= daysInMonth; day++) {
+          calendarCells.push(new Date(calendarYear, calendarMonth, day));
+        }
+
+        const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        const activeSchedules = selectedCalendarDate 
+          ? selectedCaregiverForBooking.schedules.filter((s: any) => {
+              const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+              return s.dayOfWeek.toLowerCase() === days[selectedCalendarDate.getDay()].toLowerCase();
+            })
+          : [];
+
+        const timeSlots: string[] = [];
+        activeSchedules.forEach((sched: any) => {
+          const [startH] = sched.startTime.split(':').map(Number);
+          const [endH] = sched.endTime.split(':').map(Number);
+          for (let h = startH; h < endH; h++) {
+            timeSlots.push(`${h.toString().padStart(2, '0')}:00 - ${(h + 1).toString().padStart(2, '0')}:00`);
+          }
+        });
+
+        return (
+          <div className="modal-overlay" onClick={() => setShowBookingCalendarModal(false)} style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
+            <div className="modal-glass" onClick={e => e.stopPropagation()} style={{ maxWidth: 520, width: '90%', padding: 28, borderRadius: 24, border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <div>
+                  <h3 className="modal-title" style={{ margin: 0, fontSize: 20 }}>Select Date & Time</h3>
+                  <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>Book: <strong style={{ color: 'var(--accent-cyan)' }}>{selectedCaregiverForBooking.firstName} {selectedCaregiverForBooking.lastName}</strong></p>
+                </div>
+                <button onClick={() => setShowBookingCalendarModal(false)} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', color: 'white', width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', fontSize: 18 }}>×</button>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <button onClick={() => {
+                  if (calendarMonth === 0) {
+                    setCalendarMonth(11);
+                    setCalendarYear(y => y - 1);
+                  } else {
+                    setCalendarMonth(m => m - 1);
+                  }
+                  setSelectedCalendarDate(null);
+                  setSelectedTimeSlot('');
+                }} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', color: 'white', padding: '6px 12px', borderRadius: 8, cursor: 'pointer' }}>← Prev</button>
+                <h4 style={{ margin: 0, fontWeight: 700 }}>{monthNames[calendarMonth]} {calendarYear}</h4>
+                <button onClick={() => {
+                  if (calendarMonth === 11) {
+                    setCalendarMonth(0);
+                    setCalendarYear(y => y + 1);
+                  } else {
+                    setCalendarMonth(m => m + 1);
+                  }
+                  setSelectedCalendarDate(null);
+                  setSelectedTimeSlot('');
+                }} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', color: 'white', padding: '6px 12px', borderRadius: 8, cursor: 'pointer' }}>Next →</button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 20, textAlign: 'center' }}>
+                {daysOfWeek.map(d => (
+                  <div key={d} style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', paddingBottom: 6 }}>{d}</div>
+                ))}
+                
+                {calendarCells.map((dateObj, idx) => {
+                  if (!dateObj) return <div key={`empty-${idx}`} />;
+                  
+                  const dayNum = dateObj.getDate();
+                  const isPast = dateObj.getTime() < new Date().setHours(0,0,0,0);
+                  
+                  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                  const dayName = days[dateObj.getDay()];
+                  const hasSchedule = (selectedCaregiverForBooking.schedules || []).some((s: any) => s.dayOfWeek.toLowerCase() === dayName.toLowerCase());
+                  
+                  const isClickable = !isPast && hasSchedule;
+                  const isSelected = selectedCalendarDate?.toDateString() === dateObj.toDateString();
+
+                  return (
+                    <button
+                      key={dayNum}
+                      disabled={!isClickable}
+                      onClick={() => {
+                        setSelectedCalendarDate(dateObj);
+                        setSelectedTimeSlot('');
+                      }}
+                      style={{
+                        padding: '10px 0',
+                        borderRadius: 10,
+                        border: isSelected ? '2px solid var(--accent-cyan)' : '1px solid transparent',
+                        background: isSelected 
+                          ? 'rgba(34, 211, 238, 0.15)' 
+                          : isClickable 
+                            ? 'rgba(59, 130, 246, 0.08)' 
+                            : 'rgba(255,255,255,0.02)',
+                        color: isClickable ? '#fff' : 'rgba(255,255,255,0.2)',
+                        cursor: isClickable ? 'pointer' : 'not-allowed',
+                        fontSize: 13,
+                        fontWeight: isClickable ? 700 : 400,
+                        boxShadow: isSelected ? '0 0 10px rgba(34, 211, 238, 0.3)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {dayNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {selectedCalendarDate && (
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 16 }}>
+                  <h5 style={{ margin: '0 0 10px 0', fontSize: 13, fontWeight: 700 }}>Select Time Slot for {selectedCalendarDate.toLocaleDateString(undefined, { dateStyle: 'medium' })}</h5>
+                  {timeSlots.length === 0 ? (
+                    <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: 0 }}>No slots available.</p>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, maxHeight: 120, overflowY: 'auto', paddingRight: 4 }}>
+                      {timeSlots.map(slot => {
+                        const isSlotSelected = selectedTimeSlot === slot;
+                        return (
+                          <button
+                            key={slot}
+                            onClick={() => setSelectedTimeSlot(slot)}
+                            style={{
+                              padding: '8px 10px',
+                              borderRadius: 8,
+                              border: isSlotSelected ? '1px solid var(--accent-cyan)' : '1px solid rgba(255,255,255,0.08)',
+                              background: isSlotSelected ? 'rgba(34, 211, 238, 0.1)' : 'rgba(255,255,255,0.03)',
+                              color: isSlotSelected ? 'var(--accent-cyan)' : '#fff',
+                              cursor: 'pointer',
+                              fontSize: 12,
+                              fontWeight: isSlotSelected ? 700 : 500,
+                              textAlign: 'center',
+                              transition: 'all 0.15s'
+                            }}
+                          >
+                            {slot}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 12, marginTop: 24, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 20 }}>
+                <button className="btn btn-ghost" onClick={() => setShowBookingCalendarModal(false)} style={{ flex: 1 }}>Cancel</button>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={confirmCalendarBooking} 
+                  disabled={!selectedCalendarDate || !selectedTimeSlot}
+                  style={{ flex: 1, opacity: (!selectedCalendarDate || !selectedTimeSlot) ? 0.5 : 1 }}
+                >
+                  Confirm Booking ✨
+                </button>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
 
         </div>
       </main>

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useModal } from '../components/ModalContext';
+import CaregiverMap from '../components/CaregiverMap';
 
 export default function FindCaregivers() {
   const [caregivers, setCaregivers] = useState<any[]>([]);
@@ -112,6 +113,10 @@ export default function FindCaregivers() {
             Advanced Filter ⚙️
           </button>
         </div>
+
+        {!loading && caregivers.length > 0 && (
+          <CaregiverMap caregivers={caregivers} onBookClick={handleBookClick} />
+        )}
 
         {/* Grid */}
         <div className="stagger" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>

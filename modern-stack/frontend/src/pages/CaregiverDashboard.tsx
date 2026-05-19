@@ -18,6 +18,11 @@ export default function CaregiverDashboard() {
   const [kycForm, setKycForm] = useState({ nidNumber: '', nidFrontUrl: '', nidBackUrl: '', certificateUrl: '', policeClearanceUrl: '' });
   const [animationKey, setAnimationKey] = useState(0);
 
+  // Caregiver Interactive Calendar States
+  const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
+  const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(new Date());
+
   const navigate = useNavigate();
   const { showSuccess, showError, showConfirm } = useModal();
   const userId = localStorage.getItem('userId') || '';
@@ -26,6 +31,8 @@ export default function CaregiverDashboard() {
     if (!userId) { navigate('/login'); return; }
     loadProfile();
     loadPending();
+    loadAccepted();
+    loadHistory();
     loadNotifications();
   }, []);
 
@@ -93,23 +100,29 @@ export default function CaregiverDashboard() {
   const loadNotifications = async () => { try { setNotifications(await api.get('/notifications')); } catch {} };
   const markNotificationRead = async (id: string) => { try { await api.put(`/notifications/${id}/read`); loadNotifications(); } catch {} };
 
+  const reloadBookings = () => {
+    loadPending();
+    loadAccepted();
+    loadHistory();
+  };
+
   const handleAccept = (bookingId: string) => {
     showConfirm('Accept Booking', 'Are you sure you want to accept this booking?', async () => {
-      try { await api.post(`/bookings/${bookingId}/accept`); showSuccess('Accepted', 'Booking accepted.'); loadPending(); }
+      try { await api.post(`/bookings/${bookingId}/accept`); showSuccess('Accepted', 'Booking accepted.'); reloadBookings(); }
       catch (e: any) { showError('Error', e.message); }
     });
   };
 
   const handleReject = (bookingId: string) => {
     showConfirm('Reject Booking', 'Are you sure you want to reject this booking?', async () => {
-      try { await api.post(`/bookings/${bookingId}/reject`); showSuccess('Rejected', 'Booking has been rejected.'); loadPending(); }
+      try { await api.post(`/bookings/${bookingId}/reject`); showSuccess('Rejected', 'Booking has been rejected.'); reloadBookings(); }
       catch (e: any) { showError('Error', e.message); }
     });
   };
 
   const handleComplete = (bookingId: string) => {
     showConfirm('Complete Booking', 'Mark this booking as completed?', async () => {
-      try { await api.post(`/bookings/${bookingId}/complete`); showSuccess('Completed', 'Booking marked as completed.'); loadAccepted(); }
+      try { await api.post(`/bookings/${bookingId}/complete`); showSuccess('Completed', 'Booking marked as completed.'); reloadBookings(); }
       catch (e: any) { showError('Error', e.message); }
     });
   };
@@ -252,6 +265,183 @@ export default function CaregiverDashboard() {
                   <div style={{ position: 'absolute', right: 20, top: 20, fontSize: 36, opacity: 0.8, filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.5))' }}>{profile?.isActive ? '🛡️' : '⏳'}</div>
                 </div>
               </div>
+
+              {/* Caregiver Schedule Calendar */}
+              {(() => {
+                const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+                const firstDayIndex = new Date(calendarYear, calendarMonth, 1).getDay();
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                
+                const calendarCells = [];
+                for (let i = 0; i < firstDayIndex; i++) {
+                  calendarCells.push(null);
+                }
+                for (let day = 1; day <= daysInMonth; day++) {
+                  calendarCells.push(new Date(calendarYear, calendarMonth, day));
+                }
+
+                const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+                const allBookings = [...pendingBookings, ...acceptedBookings, ...historyBookings];
+
+                const selectedDayBookings = selectedCalendarDate
+                  ? allBookings.filter(b => new Date(b.serviceDate).toDateString() === selectedCalendarDate.toDateString())
+                  : [];
+
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 28, marginTop: 32 }}>
+                    
+                    {/* Calendar Card */}
+                    <div className="glass-card" style={{ padding: 24 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                        <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>📅 Work Schedule</h2>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button className="btn btn-ghost btn-sm" onClick={() => {
+                            if (calendarMonth === 0) {
+                              setCalendarMonth(11);
+                              setCalendarYear(y => y - 1);
+                            } else {
+                              setCalendarMonth(m => m - 1);
+                            }
+                            setSelectedCalendarDate(null);
+                          }} style={{ padding: '4px 10px', fontSize: 12 }}>←</button>
+                          <span style={{ fontSize: 14, fontWeight: 700, alignSelf: 'center', minWidth: 110, textAlign: 'center' }}>
+                            {monthNames[calendarMonth]} {calendarYear}
+                          </span>
+                          <button className="btn btn-ghost btn-sm" onClick={() => {
+                            if (calendarMonth === 11) {
+                              setCalendarMonth(0);
+                              setCalendarYear(y => y + 1);
+                            } else {
+                              setCalendarMonth(m => m + 1);
+                            }
+                            setSelectedCalendarDate(null);
+                          }} style={{ padding: '4px 10px', fontSize: 12 }}>→</button>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, textAlign: 'center', marginBottom: 10 }}>
+                        {daysOfWeek.map(d => (
+                          <div key={d} style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)' }}>{d}</div>
+                        ))}
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
+                        {calendarCells.map((dateObj, idx) => {
+                          if (!dateObj) return <div key={`empty-${idx}`} />;
+                          
+                          const dayNum = dateObj.getDate();
+                          const isSelected = selectedCalendarDate?.toDateString() === dateObj.toDateString();
+                          
+                          const dayBookings = allBookings.filter(b => new Date(b.serviceDate).toDateString() === dateObj.toDateString());
+                          const hasPending = dayBookings.some(b => b.status === 'pending');
+                          const hasAccepted = dayBookings.some(b => b.status === 'CAREGIVER_ACCEPTED' || b.status === 'APPROVED_BY_ADMIN');
+                          const hasCompleted = dayBookings.some(b => b.status === 'completed');
+
+                          return (
+                            <button
+                              key={dayNum}
+                              onClick={() => setSelectedCalendarDate(dateObj)}
+                              style={{
+                                padding: '12px 0',
+                                borderRadius: 12,
+                                border: isSelected ? '2px solid var(--accent-cyan)' : '1.5px solid rgba(255,255,255,0.03)',
+                                background: isSelected ? 'rgba(34, 211, 238, 0.1)' : 'rgba(255,255,255,0.02)',
+                                color: '#fff',
+                                cursor: 'pointer',
+                                fontSize: 13,
+                                fontWeight: 700,
+                                position: 'relative',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: 4,
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              {dayNum}
+                              <div style={{ display: 'flex', gap: 3, height: 5, justifyContent: 'center' }}>
+                                {hasPending && <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#fbbf24' }} />}
+                                {hasAccepted && <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#3b82f6' }} />}
+                                {hasCompleted && <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10b981' }} />}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 14, justifyContent: 'center', marginTop: 20, fontSize: 11, color: 'var(--text-secondary)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fbbf24' }} /> Pending
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3b82f6' }} /> Confirmed
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }} /> Completed
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Bookings List Card for Selected Day */}
+                    <div className="glass-card" style={{ padding: 24, display: 'flex', flexDirection: 'column' }}>
+                      <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>
+                        📅 Day Schedule
+                        {selectedCalendarDate && (
+                          <span style={{ color: 'var(--accent-cyan)', fontSize: 13, display: 'block', fontWeight: 600, marginTop: 4 }}>
+                            {selectedCalendarDate.toLocaleDateString(undefined, { dateStyle: 'long' })}
+                          </span>
+                        )}
+                      </h2>
+
+                      <div style={{ flex: 1, overflowY: 'auto', maxHeight: 310, display: 'flex', flexDirection: 'column', gap: 12, paddingRight: 4 }}>
+                        {selectedDayBookings.length === 0 ? (
+                          <div style={{ textAlign: 'center', padding: '40px 0', margin: 'auto', color: 'var(--text-muted)' }}>
+                            <span style={{ fontSize: 32, display: 'block', marginBottom: 10 }}>⛱️</span>
+                            <p style={{ margin: 0, fontSize: 13 }}>No bookings scheduled for this day.</p>
+                          </div>
+                        ) : (
+                          selectedDayBookings.map(b => (
+                            <div key={b.bookingId} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 16 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                <span style={{ fontWeight: 800, fontSize: 14 }}>{b.clientName}</span>
+                                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', padding: '4px 10px', borderRadius: 20, 
+                                  background: b.status === 'pending' ? 'rgba(251,191,36,0.1)' : b.status === 'completed' ? 'rgba(16,185,129,0.1)' : 'rgba(59,130,246,0.1)',
+                                  color: b.status === 'pending' ? '#fbbf24' : b.status === 'completed' ? '#10b981' : '#3b82f6',
+                                  border: b.status === 'pending' ? '1px solid rgba(251,191,36,0.2)' : b.status === 'completed' ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(59,130,246,0.2)'
+                                }}>
+                                  {b.status === 'CAREGIVER_ACCEPTED' ? 'Accepted' : b.status === 'APPROVED_BY_ADMIN' ? 'Approved' : b.status}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <div>📞 {b.clientPhone}</div>
+                                <div>📍 {b.clientAddress}</div>
+                                <div style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>⏰ {new Date(b.serviceDate).toLocaleTimeString(undefined, { timeStyle: 'short' })}</div>
+                              </div>
+                              
+                              {/* Quick Actions inside Calendar */}
+                              {b.status === 'pending' && (
+                                <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                                  <button className="btn btn-ghost btn-sm" onClick={() => handleReject(b.bookingId)} style={{ flex: 1, padding: '6px 0', fontSize: 12 }}>Reject</button>
+                                  <button className="btn btn-primary btn-sm" onClick={() => handleAccept(b.bookingId)} style={{ flex: 1, padding: '6px 0', fontSize: 12 }}>Accept</button>
+                                </div>
+                              )}
+                              {(b.status === 'CAREGIVER_ACCEPTED' || b.status === 'APPROVED_BY_ADMIN') && (
+                                <button className="btn btn-primary btn-sm" onClick={() => handleComplete(b.bookingId)} style={{ width: '100%', marginTop: 12, padding: '6px 0', fontSize: 12 }}>
+                                  Mark Completed ✔
+                                </button>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+                );
+              })()}
+
             </>
           )}
 
