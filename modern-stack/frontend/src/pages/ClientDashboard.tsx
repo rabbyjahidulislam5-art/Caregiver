@@ -745,6 +745,20 @@ export default function ClientDashboard() {
 
         </div>
       </main>
+ 
+      {/* MOBILE BOTTOM NAV */}
+      <div className="mobile-nav" style={{ display: 'none' }}>
+        {sidebarItems.map(item => (
+          <div
+            key={item.key}
+            className={`mobile-nav-item ${tab === item.key ? 'active' : ''}`}
+            onClick={() => changeTab(item.key)}
+          >
+            <span>{item.icon}</span>
+            <div>{item.label === 'Notifications' ? 'Alerts' : item.label === 'My Profile' ? 'Profile' : item.label}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

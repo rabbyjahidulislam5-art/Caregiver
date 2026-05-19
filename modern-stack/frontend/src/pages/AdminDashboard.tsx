@@ -128,7 +128,7 @@ export default function AdminDashboard() {
   return (
     <div className="page-container fade-in">
       {/* SIDEBAR */}
-      <aside className="sidebar" style={{ width: 300 }}>
+      <aside className="sidebar">
         <div className="sidebar-logo">🛡️ <span>Admin Center</span></div>
         <nav className="sidebar-nav">
           {sidebarItems.map(item => (
@@ -148,7 +148,7 @@ export default function AdminDashboard() {
       </aside>
 
       {/* MAIN */}
-      <main className="main-content" style={{ marginLeft: 300 }} key={animationKey}>
+      <main className="main-content" key={animationKey}>
         <div className="tab-transition">
 
           {/* OVERVIEW */}
@@ -498,6 +498,20 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+ 
+      {/* MOBILE BOTTOM NAV */}
+      <div className="mobile-nav" style={{ display: 'none' }}>
+        {sidebarItems.map(item => (
+          <div
+            key={item.key}
+            className={`mobile-nav-item ${tab === item.key ? 'active' : ''}`}
+            onClick={() => changeTab(item.key)}
+          >
+            <span>{item.icon}</span>
+            <div>{item.label === 'Notifications' ? 'Alerts' : item.label}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
