@@ -437,9 +437,13 @@ export default function AdminDashboard() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 20 }}>
           <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 24, width: '100%', maxWidth: 500, overflow: 'hidden', animation: 'fadeScale 0.3s ease-out' }}>
             <div style={{ background: selectedUserDetail.role === 'admin' ? 'linear-gradient(135deg,#8b5cf6,#7c3aed)' : selectedUserDetail.role === 'caregiver' ? 'linear-gradient(135deg,#10b981,#059669)' : 'linear-gradient(135deg,#3b82f6,#2563eb)', padding: '30px 24px', display: 'flex', alignItems: 'center', gap: 20, position: 'relative' }}>
-              <div style={{ width: 70, height: 70, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', border: '4px solid rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 900, color: '#fff' }}>
-                {(selectedUserDetail.firstName.charAt(0) || selectedUserDetail.email.charAt(0)).toUpperCase()}
-              </div>
+              {selectedUserDetail.profilePictureUrl ? (
+                <img src={selectedUserDetail.profilePictureUrl} alt="profile" style={{ width: 70, height: 70, borderRadius: '50%', objectFit: 'cover', border: '4px solid rgba(255,255,255,0.4)', flexShrink: 0 }} />
+              ) : (
+                <div style={{ width: 70, height: 70, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', border: '4px solid rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
+                  {(selectedUserDetail.firstName.charAt(0) || selectedUserDetail.email.charAt(0)).toUpperCase()}
+                </div>
+              )}
               <div style={{ color: '#fff' }}>
                 <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>{selectedUserDetail.firstName} {selectedUserDetail.lastName}</h2>
                 <div style={{ fontSize: 13, opacity: 0.8, marginTop: 4, textTransform: 'uppercase', fontWeight: 700, letterSpacing: 1 }}>{selectedUserDetail.role}</div>
@@ -447,14 +451,36 @@ export default function AdminDashboard() {
               <button onClick={() => setSelectedUserDetail(null)} style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(0,0,0,0.2)', border: 'none', color: '#fff', width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>×</button>
             </div>
             
-            <div style={{ padding: 24 }}>
+            <div style={{ padding: 24, maxHeight: '60vh', overflowY: 'auto' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Email Address</div><div style={{ color: '#f8fafc', fontSize: 15 }}>{selectedUserDetail.email}</div></div>
                 {selectedUserDetail.phone && <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Phone Number</div><div style={{ color: '#f8fafc', fontSize: 15 }}>{selectedUserDetail.phone}</div></div>}
+                {selectedUserDetail.bloodGroup && <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Blood Group</div><div style={{ color: '#f8fafc', fontSize: 15 }}>{selectedUserDetail.bloodGroup}</div></div>}
                 {selectedUserDetail.profession && <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Profession</div><div style={{ color: '#f8fafc', fontSize: 15 }}>{selectedUserDetail.profession}</div></div>}
+                {selectedUserDetail.gender && <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Gender</div><div style={{ color: '#f8fafc', fontSize: 15 }}>{selectedUserDetail.gender}</div></div>}
+                {selectedUserDetail.dob && <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Date of Birth</div><div style={{ color: '#f8fafc', fontSize: 15 }}>{new Date(selectedUserDetail.dob).toLocaleDateString()}</div></div>}
+                {selectedUserDetail.presentAddress && <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Present Address</div><div style={{ color: '#f8fafc', fontSize: 15 }}>{selectedUserDetail.presentAddress}</div></div>}
+                {selectedUserDetail.permanentAddress && <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Permanent Address</div><div style={{ color: '#f8fafc', fontSize: 15 }}>{selectedUserDetail.permanentAddress}</div></div>}
                 <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Joined Date</div><div style={{ color: '#f8fafc', fontSize: 15 }}>{new Date(selectedUserDetail.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</div></div>
+                
+                {selectedUserDetail.role === 'caregiver' && (
+                  <div style={{ marginTop: 12, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 12 }}>Verification Info</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>KYC Status</div><span className={getBadgeClass(selectedUserDetail.kycStatus)}>{selectedUserDetail.kycStatus}</span></div>
+                      {selectedUserDetail.nidNumber && <div><div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>NID Number</div><div style={{ color: '#f8fafc', fontSize: 15 }}>{selectedUserDetail.nidNumber}</div></div>}
+                      
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                        {selectedUserDetail.nidFrontUrl && <a href={selectedUserDetail.nidFrontUrl} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '6px 12px' }}>📄 NID Front</a>}
+                        {selectedUserDetail.nidBackUrl && <a href={selectedUserDetail.nidBackUrl} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '6px 12px' }}>📄 NID Back</a>}
+                        {selectedUserDetail.certificateUrl && <a href={selectedUserDetail.certificateUrl} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '6px 12px' }}>📜 License</a>}
+                        {selectedUserDetail.policeClearanceUrl && <a href={selectedUserDetail.policeClearanceUrl} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '6px 12px' }}>🛡️ Police Clear</a>}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-
+              
               <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
                 <button onClick={() => setSelectedUserDetail(null)} style={{ padding: '10px 20px', borderRadius: 12, background: 'rgba(255,255,255,0.05)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Close</button>
                 {selectedUserDetail.role !== 'admin' && (

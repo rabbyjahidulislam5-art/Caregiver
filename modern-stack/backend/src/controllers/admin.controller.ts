@@ -17,6 +17,18 @@ export const getAllUsers = async (req: Request, res: Response) => {
       profession: u.profile?.profession || null,
       phone: u.phone || null,
       createdAt: u.createdAt,
+      bloodGroup: u.bloodGroup || null,
+      profilePictureUrl: u.profile?.profilePictureUrl || null,
+      presentAddress: u.profile?.presentAddress || null,
+      permanentAddress: u.profile?.permanentAddress || null,
+      gender: u.profile?.gender || null,
+      dob: u.profile?.dob || null,
+      nidNumber: u.profile?.nidNumber || null,
+      nidFrontUrl: u.profile?.nidFrontUrl || null,
+      nidBackUrl: u.profile?.nidBackUrl || null,
+      certificateUrl: u.profile?.certificateUrl || null,
+      policeClearanceUrl: u.profile?.policeClearanceUrl || null,
+      kycStatus: u.profile?.kycStatus || 'PENDING',
     }));
     res.json(result);
   } catch (error: any) {
