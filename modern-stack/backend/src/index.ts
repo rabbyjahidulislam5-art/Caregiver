@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import compression from 'compression';
 import { auditMiddleware } from './middlewares/audit.middleware';
 import { authMiddleware } from './middlewares/auth.middleware';
 import authRoutes from './routes/auth.routes';
@@ -15,6 +16,7 @@ const PORT = process.env.PORT || 4000;
 const prisma = new PrismaClient();
 
 // Middleware
+app.use(compression());
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(authMiddleware);

@@ -94,6 +94,9 @@ model Booking {
   client    User @relation("ClientBookings", fields: [clientId], references: [id])
   caregiver User @relation("CaregiverBookings", fields: [caregiverId], references: [id])
 
+  @@index([caregiverId])
+  @@index([clientId])
+  @@index([status])
   @@map("bookings")
 }
 
@@ -137,6 +140,7 @@ model Schedule {
 
   caregiver User @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
 
+  @@index([caregiverId])
   @@map("schedules")
 }
 
@@ -149,6 +153,7 @@ model AuditLog {
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  @@index([userId])
   @@map("audit_logs")
 }
 
@@ -162,6 +167,7 @@ model Notification {
 
   user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("notifications")
 }
 
