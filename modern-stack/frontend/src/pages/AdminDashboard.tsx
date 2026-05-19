@@ -281,8 +281,8 @@ export default function AdminDashboard() {
                     </div>
 
                     <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
-                      <button className="btn btn-danger" onClick={() => handleRejectCaregiver(c.profileId)}>✕ Reject KYC</button>
-                      <button className="btn btn-success" onClick={() => handleApproveCaregiver(c.profileId)} disabled={c.kycStatus !== 'SUBMITTED'}>✓ Approve Profile</button>
+                      <button className="btn btn-danger" onClick={() => handleRejectCaregiver(c.profileId)} disabled={c.kycStatus === 'REJECTED'}>✕ Reject KYC</button>
+                      <button className="btn btn-success" onClick={() => handleApproveCaregiver(c.profileId)} disabled={c.kycStatus === 'APPROVED'}>✓ Approve Profile</button>
                     </div>
                   </div>
                 ))}

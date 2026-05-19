@@ -8,6 +8,13 @@ const prisma = new PrismaClient();
 export const createBooking = async (req: Request, res: Response) => {
   try {
     const { clientId, caregiverId, serviceDate } = req.body;
+
+    // Verify if caregiver profile is active (approved by admin)
+    const targetCaregiverProfile = await prisma.profile.findUnique({ where: { userId: caregiverId } });
+    if (!targetCaregiverProfile || !targetCaregiverProfile.isActive) {
+      return res.status(403).json({ error: 'Caregiver profile is not approved or verified by administration.' });
+    }
+
     const booking = await prisma.booking.create({
       data: {
         clientId,
