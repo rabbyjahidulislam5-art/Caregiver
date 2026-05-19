@@ -5,6 +5,7 @@ import * as complaint from '../controllers/complaint.controller';
 import * as review from '../controllers/review.controller';
 import * as schedule from '../controllers/schedule.controller';
 import * as admin from '../controllers/admin.controller';
+import * as notification from '../controllers/notification.controller';
 
 const router = Router();
 
@@ -47,6 +48,7 @@ router.get('/admin/users', admin.getAllUsers);
 router.delete('/admin/users/:id', admin.deleteUser);
 router.get('/admin/pending-caregivers', admin.getPendingCaregivers);
 router.put('/admin/approve/:profileId', admin.approveCaregiver);
+router.put('/admin/reject/:profileId', admin.rejectCaregiver);
 router.get('/admin/requests/pending', admin.getPendingBookingRequests);
 router.post('/admin/requests/:id/:action', admin.reviewBookingRequest);
 router.get('/admin/complaints', admin.getAllComplaints);
@@ -56,5 +58,9 @@ router.get('/admin/stats', admin.getStats);
 
 // === Self-Service Account Deletion ===
 router.delete('/account/delete/:userId', admin.deleteSelf);
+
+// === Notification Routes ===
+router.get('/notifications', notification.getMyNotifications);
+router.put('/notifications/:id/read', notification.markAsRead);
 
 export default router;

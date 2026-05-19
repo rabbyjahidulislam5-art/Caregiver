@@ -31,7 +31,7 @@ export const getCaregiverReviews = async (req: Request, res: Response) => {
       include: { client: { include: { profile: true } } }
     });
 
-    const result = reviews.map(r => ({
+    const result = reviews.map((r: any) => ({
       reviewId: r.id,
       reviewerName: r.client.profile ? `${r.client.profile.firstName} ${r.client.profile.lastName}` : 'Anonymous',
       rating: r.rating,

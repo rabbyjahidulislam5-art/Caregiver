@@ -50,8 +50,8 @@ export default function Register() {
       await api.post('/register', form);
       showSuccess('Account Created!', 'You can now log in with your credentials.');
       setTimeout(() => navigate('/login'), 1500);
-    } catch (err: any) {
-      showError('Registration Failed', err.message);
+    } catch (err: unknown) {
+      showError('Registration Failed', (err as Error).message);
     } finally {
       setLoading(false);
     }

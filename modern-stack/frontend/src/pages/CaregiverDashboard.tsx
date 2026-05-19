@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useModal } from '../components/ModalContext';
 
-type Tab = 'dashboard' | 'pending' | 'accepted' | 'history' | 'schedule' | 'profile';
+type Tab = 'dashboard' | 'pending' | 'accepted' | 'history' | 'schedule' | 'profile' | 'kyc' | 'notifications';
 
 export default function CaregiverDashboard() {
   const [tab, setTab] = useState<Tab>('dashboard');
@@ -12,8 +12,10 @@ export default function CaregiverDashboard() {
   const [acceptedBookings, setAcceptedBookings] = useState<any[]>([]);
   const [historyBookings, setHistoryBookings] = useState<any[]>([]);
   const [schedules, setSchedules] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [newSchedule, setNewSchedule] = useState({ dayOfWeek: 'Monday', startTime: '09:00', endTime: '17:00' });
   const [editForm, setEditForm] = useState({ firstName: '', lastName: '', profession: '', experienceYears: '', address: '', phone: '', profilePictureUrl: '' });
+  const [kycForm, setKycForm] = useState({ nidNumber: '', nidFrontUrl: '', nidBackUrl: '', certificateUrl: '', policeClearanceUrl: '' });
   const [animationKey, setAnimationKey] = useState(0);
 
   const navigate = useNavigate();
@@ -24,6 +26,7 @@ export default function CaregiverDashboard() {
     if (!userId) { navigate('/login'); return; }
     loadProfile();
     loadPending();
+    loadNotifications();
   }, []);
 
   const changeTab = (newTab: Tab) => {
@@ -33,6 +36,7 @@ export default function CaregiverDashboard() {
     if (newTab === 'accepted') loadAccepted();
     if (newTab === 'history') loadHistory();
     if (newTab === 'schedule') loadSchedules();
+    if (newTab === 'notifications') loadNotifications();
   };
 
   const loadProfile = async () => {
@@ -47,6 +51,13 @@ export default function CaregiverDashboard() {
         address: p.address || '', 
         phone: p.phone || '',
         profilePictureUrl: p.image || ''
+      });
+      setKycForm({
+        nidNumber: p.nidNumber || '',
+        nidFrontUrl: p.nidFrontUrl || '',
+        nidBackUrl: p.nidBackUrl || '',
+        certificateUrl: p.certificateUrl || '',
+        policeClearanceUrl: p.policeClearanceUrl || ''
       });
     } catch {}
   };
@@ -65,10 +76,22 @@ export default function CaregiverDashboard() {
     }
   };
 
+  const handleKycUpload = (e: React.ChangeEvent<HTMLInputElement>, field: keyof typeof kycForm) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) return showError('File too large', 'Please upload a file smaller than 5MB');
+      const reader = new FileReader();
+      reader.onloadend = () => setKycForm(prev => ({ ...prev, [field]: reader.result as string }));
+      reader.readAsDataURL(file);
+    }
+  };
+
   const loadPending = async () => { try { setPendingBookings(await api.get(`/bookings/caregiver/${userId}/pending`)); } catch {} };
   const loadAccepted = async () => { try { setAcceptedBookings(await api.get(`/bookings/caregiver/${userId}/accepted`)); } catch {} };
   const loadHistory = async () => { try { setHistoryBookings(await api.get(`/bookings/caregiver/${userId}/history`)); } catch {} };
   const loadSchedules = async () => { try { setSchedules(await api.get(`/schedule/${userId}`)); } catch {} };
+  const loadNotifications = async () => { try { setNotifications(await api.get('/notifications')); } catch {} };
+  const markNotificationRead = async (id: string) => { try { await api.put(`/notifications/${id}/read`); loadNotifications(); } catch {} };
 
   const handleAccept = (bookingId: string) => {
     showConfirm('Accept Booking', 'Are you sure you want to accept this booking?', async () => {
@@ -114,6 +137,17 @@ export default function CaregiverDashboard() {
     } catch (e: any) { showError('Error', e.message); }
   };
 
+  const handleSubmitKyc = async () => {
+    if (!kycForm.nidNumber || !kycForm.nidFrontUrl || !kycForm.nidBackUrl) {
+      return showError('Missing Fields', 'Please provide at least your NID Number and both NID images.');
+    }
+    try {
+      await api.put(`/update-profile/${userId}`, { ...kycForm, kycStatus: 'SUBMITTED' });
+      showSuccess('KYC Submitted', 'Your documents are under review by an Admin.');
+      loadProfile();
+    } catch (e: any) { showError('Error', e.message); }
+  };
+
   const handleLogout = () => {
     showConfirm('Logout', 'Are you sure?', async () => {
       try { await api.post('/logout'); } catch {}
@@ -142,6 +176,8 @@ export default function CaregiverDashboard() {
     { key: 'accepted',  icon: '✅', label: 'Accepted Jobs' },
     { key: 'history',   icon: '📋', label: 'Job History' },
     { key: 'schedule',  icon: '🗓️', label: 'My Schedule' },
+    { key: 'kyc',       icon: '🛡️', label: 'KYC Verification' },
+    { key: 'notifications', icon: '🔔', label: 'Notifications' },
     { key: 'profile',   icon: '👤', label: 'Edit Profile' },
   ];
 
@@ -197,11 +233,11 @@ export default function CaregiverDashboard() {
                 <p>Manage your professional caregiving career seamlessly.</p>
               </div>
               <div className="stats-grid stagger">
-                <div className="stat-card glass-card" style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(30,58,138,0.1))', border: '1px solid rgba(59,130,246,0.2)', position: 'relative', overflow: 'hidden' }}>
+                <div className="stat-card glass-card" onClick={() => changeTab('notifications')} style={{ cursor: 'pointer', background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(30,58,138,0.1))', border: '1px solid rgba(59,130,246,0.2)', position: 'relative', overflow: 'hidden' }}>
                   <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, background: 'var(--accent-blue)', opacity: 0.2, filter: 'blur(30px)', borderRadius: '50%' }} />
-                  <div className="stat-value" style={{ color: '#93c5fd', textShadow: '0 0 10px rgba(147,197,253,0.3)' }}>{pendingBookings.length}</div>
-                  <div className="stat-label" style={{ color: '#bfdbfe' }}>Pending Requests</div>
-                  <div style={{ position: 'absolute', right: 20, top: 20, fontSize: 36, opacity: 0.8, filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.5))' }}>📩</div>
+                  <div className="stat-value" style={{ color: '#93c5fd', textShadow: '0 0 10px rgba(147,197,253,0.3)' }}>{notifications.filter(n => !n.isRead).length}</div>
+                  <div className="stat-label" style={{ color: '#bfdbfe' }}>Unread Alerts</div>
+                  <div style={{ position: 'absolute', right: 20, top: 20, fontSize: 36, opacity: 0.8, filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.5))' }}>🔔</div>
                 </div>
                 <div className="stat-card glass-card" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(120,53,15,0.1))', border: '1px solid rgba(245,158,11,0.2)', position: 'relative', overflow: 'hidden' }}>
                   <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, background: 'var(--accent-amber)', opacity: 0.2, filter: 'blur(30px)', borderRadius: '50%' }} />
@@ -376,6 +412,98 @@ export default function CaregiverDashboard() {
                     {schedules.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>You haven't set any schedules yet.</td></tr>}
                   </tbody>
                 </table>
+              </div>
+            </>
+          )}
+
+          {/* NOTIFICATIONS */}
+          {tab === 'notifications' && (
+            <>
+              <div className="page-header">
+                <h1>Notifications</h1>
+                <p>Stay updated on your bookings and account activities.</p>
+              </div>
+              <div className="stagger" style={{ display: 'grid', gap: 14 }}>
+                {notifications.map((n: any) => (
+                  <div key={n.id} className="glass-card-static" style={{ padding: '18px 22px', borderLeft: n.isRead ? '4px solid transparent' : '4px solid var(--accent-blue)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4, color: n.isRead ? 'var(--text-secondary)' : '#fff' }}>{n.title}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 6 }}>{n.message}</div>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{new Date(n.createdAt).toLocaleString()}</div>
+                    </div>
+                    {!n.isRead && (
+                      <button className="btn btn-ghost" onClick={() => markNotificationRead(n.id)} style={{ fontSize: 13, padding: '8px 16px' }}>Mark as Read</button>
+                    )}
+                  </div>
+                ))}
+                {notifications.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: 60, background: 'rgba(255,255,255,0.02)', borderRadius: 22, border: '1px dashed var(--border-glass-strong)' }}>
+                    <span style={{ fontSize: 40, marginBottom: 14, display: 'block' }}>📭</span>
+                    <h3 style={{ fontWeight: 700, color: 'var(--text-muted)' }}>No notifications yet</h3>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* KYC VERIFICATION */}
+          {tab === 'kyc' && (
+            <>
+              <div className="page-header">
+                <h1>KYC Verification</h1>
+                <p>Upload your legal documents to get verified and start receiving bookings.</p>
+              </div>
+              <div className="glass-card-static" style={{ padding: 40, maxWidth: 760, marginBottom: 28 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div>
+                    <h2 style={{ fontSize: 20, fontWeight: 800 }}>Verification Status</h2>
+                  </div>
+                  <span className={`badge ${profile?.kycStatus === 'APPROVED' ? 'badge-approved' : profile?.kycStatus === 'REJECTED' ? 'badge-rejected' : 'badge-pending'}`} style={{ fontSize: 14, padding: '8px 16px' }}>
+                    {profile?.kycStatus === 'APPROVED' ? '✅ Approved & Verified' : profile?.kycStatus === 'SUBMITTED' ? '⏳ Under Review' : profile?.kycStatus === 'REJECTED' ? '❌ Rejected' : '⚠️ Action Required'}
+                  </span>
+                </div>
+                
+                {profile?.kycStatus === 'REJECTED' && (
+                  <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', padding: 16, borderRadius: 12, marginBottom: 24, color: '#fca5a5', fontSize: 14 }}>
+                    Your previous submission was rejected. Please ensure your documents are clear, valid, and match your profile details, then resubmit.
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label className="form-label">NID / Passport Number *</label>
+                  <input className="input-glass" placeholder="Enter your 10 or 13 digit NID number" value={kycForm.nidNumber} onChange={e => setKycForm(p => ({ ...p, nidNumber: e.target.value }))} disabled={profile?.kycStatus === 'APPROVED' || profile?.kycStatus === 'SUBMITTED'} />
+                </div>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">NID Front Image *</label>
+                    <input type="file" accept="image/*" className="input-glass" style={{ padding: '8px' }} onChange={e => handleKycUpload(e, 'nidFrontUrl')} disabled={profile?.kycStatus === 'APPROVED' || profile?.kycStatus === 'SUBMITTED'} />
+                    {kycForm.nidFrontUrl && <div style={{ marginTop: 8, fontSize: 12, color: 'var(--accent-green)' }}>✓ Uploaded</div>}
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">NID Back Image *</label>
+                    <input type="file" accept="image/*" className="input-glass" style={{ padding: '8px' }} onChange={e => handleKycUpload(e, 'nidBackUrl')} disabled={profile?.kycStatus === 'APPROVED' || profile?.kycStatus === 'SUBMITTED'} />
+                    {kycForm.nidBackUrl && <div style={{ marginTop: 8, fontSize: 12, color: 'var(--accent-green)' }}>✓ Uploaded</div>}
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Professional Certificate / Nursing License (Optional but recommended)</label>
+                  <input type="file" accept="image/*,.pdf" className="input-glass" style={{ padding: '8px' }} onChange={e => handleKycUpload(e, 'certificateUrl')} disabled={profile?.kycStatus === 'APPROVED' || profile?.kycStatus === 'SUBMITTED'} />
+                  {kycForm.certificateUrl && <div style={{ marginTop: 8, fontSize: 12, color: 'var(--accent-green)' }}>✓ Uploaded</div>}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Recent Police Clearance Certificate (Optional)</label>
+                  <input type="file" accept="image/*,.pdf" className="input-glass" style={{ padding: '8px' }} onChange={e => handleKycUpload(e, 'policeClearanceUrl')} disabled={profile?.kycStatus === 'APPROVED' || profile?.kycStatus === 'SUBMITTED'} />
+                  {kycForm.policeClearanceUrl && <div style={{ marginTop: 8, fontSize: 12, color: 'var(--accent-green)' }}>✓ Uploaded</div>}
+                </div>
+
+                {(profile?.kycStatus === 'PENDING' || profile?.kycStatus === 'REJECTED') && (
+                  <button className="btn btn-primary btn-lg" onClick={handleSubmitKyc} style={{ width: '100%', marginTop: 16 }}>
+                    🛡️ Submit for Verification
+                  </button>
+                )}
               </div>
             </>
           )}

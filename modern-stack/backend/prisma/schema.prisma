@@ -48,6 +48,7 @@ model User {
   complaintsReceived Complaint[] @relation("CaregiverComplaints")
   schedules          Schedule[]
   auditLogs          AuditLog[]
+  notifications      Notification[] @relation("UserNotifications")
 
   @@map("users")
 }
@@ -64,6 +65,17 @@ model Profile {
   experienceYears   Int?     @map("experience_years")
   rating            Float    @default(0.0)
   isActive          Boolean  @default(true) @map("is_active")
+  
+  // KYC & Verification Fields
+  gender             String?
+  dob                DateTime?
+  emergencyContact   String?  @map("emergency_contact")
+  nidNumber          String?  @map("nid_number")
+  nidFrontUrl        String?  @map("nid_front_url")
+  nidBackUrl         String?  @map("nid_back_url")
+  certificateUrl     String?  @map("certificate_url")
+  policeClearanceUrl String?  @map("police_clearance_url")
+  kycStatus          String   @default("PENDING") @map("kyc_status")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -138,3 +150,17 @@ model AuditLog {
 
   @@map("audit_logs")
 }
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  title     String
+  message   String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+

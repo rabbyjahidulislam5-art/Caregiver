@@ -4,11 +4,11 @@ import { useReveal } from '../hooks/useReveal';
 export default function Landing() {
   const navigate = useNavigate();
   
-  const heroReveal = useReveal(100);
-  const feature1Reveal = useReveal(200);
-  const feature2Reveal = useReveal(200);
-  const feature3Reveal = useReveal(200);
-  const ctaReveal = useReveal(200);
+  const { ref: heroRef, show: heroShow } = useReveal(100);
+  const { ref: feature1Ref, show: feature1Show } = useReveal(200);
+  const { ref: feature2Ref, show: feature2Show } = useReveal(200);
+  const { ref: feature3Ref, show: feature3Show } = useReveal(200);
+  const { ref: ctaRef, show: ctaShow } = useReveal(200);
 
   return (
     <div style={{ overflowX: 'hidden' }}>
@@ -39,8 +39,8 @@ export default function Landing() {
         <div style={{ position: 'absolute', bottom: '-20%', right: '-10%', width: '60vw', height: '60vw', background: 'var(--gradient-secondary)', filter: 'blur(120px)', opacity: 0.1, borderRadius: '50%', animation: 'bgDrift 25s infinite ease-in-out alternate-reverse' }} />
         
         <div 
-          ref={heroReveal.ref} 
-          className={`reveal-scale ${heroReveal.show ? 'show' : ''}`}
+          ref={heroRef} 
+          className={`reveal-scale ${heroShow ? 'show' : ''}`}
           style={{ 
             maxWidth: 1000, 
             textAlign: 'center', 
@@ -81,7 +81,7 @@ export default function Landing() {
       {/* ── STORY SECTION 1 ─────────────────────────────────── */}
       <section style={{ padding: '120px 5%', background: 'var(--bg-secondary)', position: 'relative' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 80, flexWrap: 'wrap' }}>
-          <div ref={feature1Reveal.ref} className={`reveal-left ${feature1Reveal.show ? 'show' : ''}`} style={{ flex: '1 1 500px' }}>
+          <div ref={feature1Ref} className={`reveal-left ${feature1Show ? 'show' : ''}`} style={{ flex: '1 1 500px' }}>
             <h2 style={{ fontSize: 'clamp(36px, 5vw, 54px)', fontWeight: 800, marginBottom: 24, lineHeight: 1.2 }}>
               Verified Professionals,<br/> <span className="text-gradient">Trusted Care.</span>
             </h2>
@@ -102,7 +102,7 @@ export default function Landing() {
             </ul>
           </div>
           
-          <div ref={feature2Reveal.ref} className={`reveal-right ${feature2Reveal.show ? 'show' : ''}`} style={{ flex: '1 1 400px', position: 'relative' }}>
+          <div ref={feature2Ref} className={`reveal-right ${feature2Show ? 'show' : ''}`} style={{ flex: '1 1 400px', position: 'relative' }}>
             <div style={{ position: 'relative', borderRadius: 32, overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', height: 400 }}>
               <img src="https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?q=80&w=1200&auto=format&fit=crop" alt="Caring professional" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 30, background: 'linear-gradient(to top, rgba(15,23,42,0.95), transparent)' }}>
@@ -119,7 +119,7 @@ export default function Landing() {
       <section style={{ padding: '120px 5%', position: 'relative' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 80, flexWrap: 'wrap-reverse' }}>
           
-          <div ref={feature3Reveal.ref} className={`reveal-scale ${feature3Reveal.show ? 'show' : ''}`} style={{ flex: '1 1 400px', position: 'relative' }}>
+          <div ref={feature3Ref} className={`reveal-scale ${feature3Show ? 'show' : ''}`} style={{ flex: '1 1 400px', position: 'relative' }}>
             <div style={{ position: 'relative', borderRadius: 32, overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', height: 400 }}>
               <img src="https://images.pexels.com/photos/3768131/pexels-photo-3768131.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Smiling caregiver" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 30, background: 'linear-gradient(to top, rgba(15,23,42,0.95), transparent)' }}>
@@ -130,7 +130,7 @@ export default function Landing() {
             <div style={{ position: 'absolute', bottom: -30, left: -30, width: '100%', height: '100%', background: 'var(--gradient-secondary)', filter: 'blur(80px)', opacity: 0.2, zIndex: -1, borderRadius: 32 }} />
           </div>
 
-          <div ref={ctaReveal.ref} className={`reveal-right ${ctaReveal.show ? 'show' : ''}`} style={{ flex: '1 1 500px' }}>
+          <div ref={ctaRef} className={`reveal-right ${ctaShow ? 'show' : ''}`} style={{ flex: '1 1 500px' }}>
             <h2 style={{ fontSize: 'clamp(36px, 5vw, 54px)', fontWeight: 800, marginBottom: 24, lineHeight: 1.2 }}>
               Seamless Experience, <br/><span className="text-gradient">Zero Hassle.</span>
             </h2>

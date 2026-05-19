@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { useModal } from '../components/ModalContext';
 import AuditDashboard from '../components/AuditDashboard';
 
-type Tab = 'dashboard' | 'users' | 'caregivers' | 'bookings' | 'complaints' | 'audit';
+type Tab = 'dashboard' | 'users' | 'caregivers' | 'bookings' | 'complaints' | 'audit' | 'notifications';
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState<Tab>('dashboard');
@@ -14,6 +14,7 @@ export default function AdminDashboard() {
   const [pendingBookings, setPendingBookings] = useState<any[]>([]);
   const [complaints, setComplaints] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [animationKey, setAnimationKey] = useState(0);
   
@@ -28,6 +29,7 @@ export default function AdminDashboard() {
     const role = localStorage.getItem('role');
     if (role !== 'admin') { navigate('/login'); return; }
     loadStats();
+    loadNotifications();
   }, []);
 
   const changeTab = (newTab: Tab) => {
@@ -41,6 +43,7 @@ export default function AdminDashboard() {
     if (newTab === 'complaints') loadComplaints();
     if (newTab === 'audit') { loadAuditLogs(); loadUsers(); }
     if (newTab === 'dashboard') loadStats();
+    if (newTab === 'notifications') loadNotifications();
   };
 
   const loadStats = async () => { try { setStats(await api.get('/admin/stats')); } catch {} };
@@ -49,6 +52,8 @@ export default function AdminDashboard() {
   const loadPendingBookings = async () => { try { setPendingBookings(await api.get('/admin/requests/pending')); } catch {} };
   const loadComplaints = async () => { try { setComplaints(await api.get('/admin/complaints')); } catch {} };
   const loadAuditLogs = async () => { try { setAuditLogs(await api.get('/admin/audit-logs')); } catch {} };
+  const loadNotifications = async () => { try { setNotifications(await api.get('/notifications')); } catch {} };
+  const markNotificationRead = async (id: string) => { try { await api.put(`/notifications/${id}/read`); loadNotifications(); } catch {} };
 
   const handleDeleteUser = (id: string, email: string) => {
     showConfirm('Delete User', `Permanently delete "${email}"? This cannot be undone.`, async () => {
@@ -60,6 +65,13 @@ export default function AdminDashboard() {
   const handleApproveCaregiver = async (profileId: string) => {
     try { await api.put(`/admin/approve/${profileId}`); showSuccess('Approved', 'Caregiver activated.'); loadPendingCaregivers(); }
     catch (e: any) { showError('Error', e.message); }
+  };
+
+  const handleRejectCaregiver = async (profileId: string) => {
+    showConfirm('Reject KYC', 'Are you sure you want to reject this profile?', async () => {
+      try { await api.put(`/admin/reject/${profileId}`); showSuccess('Rejected', 'Caregiver KYC rejected.'); loadPendingCaregivers(); }
+      catch (e: any) { showError('Error', e.message); }
+    });
   };
 
   const handleBookingAction = (bookingId: string, action: string) => {
@@ -93,6 +105,7 @@ export default function AdminDashboard() {
     { key: 'caregivers', icon: '🩺', label: 'Caregiver Approvals' },
     { key: 'bookings',   icon: '📅', label: 'Booking Approvals' },
     { key: 'complaints', icon: '📝', label: 'Complaints Portal' },
+    { key: 'notifications', icon: '🔔', label: 'System Alerts' },
     { key: 'audit',      icon: '🔍', label: 'Security Audit Log' },
   ];
 
@@ -146,6 +159,12 @@ export default function AdminDashboard() {
                 <p>Real-time platform statistics and health metrics.</p>
               </div>
               <div className="stats-grid stagger">
+                <div className="stat-card glass-card" onClick={() => changeTab('notifications')} style={{ cursor: 'pointer', borderTop: '3px solid #f43f5e22' }}>
+                  <div className="stat-value" style={{ color: '#f43f5e' }}>{notifications.filter(n => !n.isRead).length}</div>
+                  <div className="stat-label">Unread Alerts</div>
+                  <div style={{ position: 'absolute', right: 20, top: 20, fontSize: 36, opacity: 0.12 }}>🔔</div>
+                  <div style={{ position: 'absolute', top: -40, right: -40, width: 100, height: 100, background: '#f43f5e', filter: 'blur(50px)', opacity: 0.15, borderRadius: '50%' }} />
+                </div>
                 {statItems.map((s, i) => (
                   <div key={i} className="stat-card glass-card" style={{ borderTop: `3px solid ${s.color}22` }}>
                     <div className="stat-value" style={{ color: s.color }}>{s.value}</div>
@@ -227,21 +246,44 @@ export default function AdminDashboard() {
               </div>
               <div className="stagger" style={{ display: 'grid', gap: 20 }}>
                 {pendingCaregivers.map((c: any) => (
-                  <div key={c.profileId} className="glass-card" style={{ padding: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
-                    <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
-                      <div style={{ width: 60, height: 60, borderRadius: 20, background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, flexShrink: 0 }}>
-                        {c.firstName?.[0] || '👩‍⚕️'}
+                  <div key={c.profileId} className="glass-card" style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
+                      <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
+                        <div style={{ width: 60, height: 60, borderRadius: 20, background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, flexShrink: 0 }}>
+                          {c.firstName?.[0] || '👩‍⚕️'}
+                        </div>
+                        <div>
+                          <h3 style={{ fontWeight: 800, fontSize: 20, marginBottom: 6 }}>{c.firstName} {c.lastName}</h3>
+                          <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
+                            <span style={{ color: 'var(--accent-cyan)' }}>{c.email}</span>
+                            {' · '}{c.profession || 'N/A'}
+                            {' · '}{c.experienceYears || 0} yrs exp.
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 style={{ fontWeight: 800, fontSize: 20, marginBottom: 6 }}>{c.firstName} {c.lastName}</h3>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
-                          <span style={{ color: 'var(--accent-cyan)' }}>{c.email}</span>
-                          {' · '}{c.profession || 'N/A'}
-                          {' · '}{c.experienceYears || 0} yrs exp.
-                        </p>
+                      <span className={`badge ${c.kycStatus === 'SUBMITTED' ? 'badge-pending' : 'badge-rejected'}`}>
+                        KYC: {c.kycStatus || 'PENDING'}
+                      </span>
+                    </div>
+
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: 16, borderRadius: 12 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, fontSize: 13 }}>
+                        <div><strong style={{ color: 'var(--text-muted)' }}>NID Number:</strong> <span style={{ color: '#fff' }}>{c.nidNumber || 'Not provided'}</span></div>
+                        <div><strong style={{ color: 'var(--text-muted)' }}>Gender:</strong> <span style={{ color: '#fff' }}>{c.gender || 'Not provided'}</span></div>
+                        <div><strong style={{ color: 'var(--text-muted)' }}>DOB:</strong> <span style={{ color: '#fff' }}>{c.dob ? new Date(c.dob).toLocaleDateString() : 'Not provided'}</span></div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
+                        {c.nidFrontUrl && <a href={c.nidFrontUrl} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>📄 View NID Front</a>}
+                        {c.nidBackUrl && <a href={c.nidBackUrl} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>📄 View NID Back</a>}
+                        {c.certificateUrl && <a href={c.certificateUrl} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>📜 View Certificate</a>}
+                        {c.policeClearanceUrl && <a href={c.policeClearanceUrl} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>🛡️ View Police Clearance</a>}
                       </div>
                     </div>
-                    <button className="btn btn-success btn-lg" onClick={() => handleApproveCaregiver(c.profileId)}>✓ Approve Profile</button>
+
+                    <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
+                      <button className="btn btn-danger" onClick={() => handleRejectCaregiver(c.profileId)}>✕ Reject KYC</button>
+                      <button className="btn btn-success" onClick={() => handleApproveCaregiver(c.profileId)} disabled={c.kycStatus !== 'SUBMITTED'}>✓ Approve Profile</button>
+                    </div>
                   </div>
                 ))}
                 {pendingCaregivers.length === 0 && (
@@ -353,6 +395,36 @@ export default function AdminDashboard() {
               </div>
               <div style={{ marginTop: 20 }}>
                 <AuditDashboard users={users} auditLogs={auditLogs} />
+              </div>
+            </>
+          )}
+
+          {/* NOTIFICATIONS */}
+          {tab === 'notifications' && (
+            <>
+              <div className="page-header">
+                <h1>System Alerts</h1>
+                <p>Stay updated on platform events, errors, and automated notifications.</p>
+              </div>
+              <div className="stagger" style={{ display: 'grid', gap: 14 }}>
+                {notifications.map((n: any) => (
+                  <div key={n.id} className="glass-card-static" style={{ padding: '18px 22px', borderLeft: n.isRead ? '4px solid transparent' : '4px solid var(--accent-blue)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4, color: n.isRead ? 'var(--text-secondary)' : '#fff' }}>{n.title}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 6 }}>{n.message}</div>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{new Date(n.createdAt).toLocaleString()}</div>
+                    </div>
+                    {!n.isRead && (
+                      <button className="btn btn-ghost" onClick={() => markNotificationRead(n.id)} style={{ fontSize: 13, padding: '8px 16px' }}>Mark as Read</button>
+                    )}
+                  </div>
+                ))}
+                {notifications.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: 60, background: 'rgba(255,255,255,0.02)', borderRadius: 22, border: '1px dashed var(--border-glass-strong)' }}>
+                    <span style={{ fontSize: 40, marginBottom: 14, display: 'block' }}>📭</span>
+                    <h3 style={{ fontWeight: 700, color: 'var(--text-muted)' }}>No alerts yet</h3>
+                  </div>
+                )}
               </div>
             </>
           )}

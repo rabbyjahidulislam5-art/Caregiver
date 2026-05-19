@@ -30,11 +30,13 @@
     "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "nodemailer": "^8.0.7",
     "prisma": "5.22.0",
     "typescript": "5.4.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/nodemailer": "^8.0.0",
     "nodemon": "^3.0.0",
     "ts-node": "^10.9.2"
   }

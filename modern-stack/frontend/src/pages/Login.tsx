@@ -22,8 +22,8 @@ export default function Login() {
       if (data.role === 'admin') navigate('/admin');
       else if (data.role === 'caregiver') navigate('/caregiver');
       else navigate('/client');
-    } catch (err: any) {
-      showError('Login Failed', err.message);
+    } catch (err: unknown) {
+      showError('Login Failed', (err as Error).message);
     } finally {
       setLoading(false);
     }

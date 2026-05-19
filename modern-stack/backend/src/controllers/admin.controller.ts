@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { NotificationService } from '../services/notification.service';
 
 const prisma = new PrismaClient();
 
@@ -7,7 +8,7 @@ const prisma = new PrismaClient();
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({ include: { profile: true } });
-    const result = users.map(u => ({
+    const result = users.map((u: any) => ({
       userId: u.id,
       email: u.email,
       role: u.role,
@@ -68,7 +69,7 @@ export const getPendingCaregivers = async (req: Request, res: Response) => {
       include: { user: true }
     });
 
-    const result = profiles.map(p => ({
+    const result = profiles.map((p: any) => ({
       profileId: p.id,
       userId: p.userId,
       firstName: p.firstName,
@@ -76,6 +77,14 @@ export const getPendingCaregivers = async (req: Request, res: Response) => {
       email: p.user.email,
       profession: p.profession,
       experienceYears: p.experienceYears,
+      kycStatus: p.kycStatus,
+      nidNumber: p.nidNumber,
+      nidFrontUrl: p.nidFrontUrl,
+      nidBackUrl: p.nidBackUrl,
+      certificateUrl: p.certificateUrl,
+      policeClearanceUrl: p.policeClearanceUrl,
+      gender: p.gender,
+      dob: p.dob,
     }));
 
     res.json(result);
@@ -90,7 +99,7 @@ export const approveCaregiver = async (req: Request, res: Response) => {
     const profileId = req.params.profileId as string;
     const profile = await prisma.profile.update({ 
       where: { id: profileId }, 
-      data: { isActive: true },
+      data: { isActive: true, kycStatus: 'APPROVED' },
       include: { user: true }
     });
 
@@ -106,9 +115,48 @@ export const approveCaregiver = async (req: Request, res: Response) => {
       data: { action: 'PROFILE_APPROVED', userId: profile.userId, details: `Your professional profile has been officially approved by the Administration` }
     });
 
+    // Send Notification
+    await NotificationService.send(
+      profile.userId,
+      'Profile Approved',
+      'Your professional profile has been officially approved. You can now accept booking requests!'
+    );
+
     res.json({ message: 'Caregiver approved' });
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to approve caregiver' });
+  }
+};
+
+// PUT /api/admin/reject/:profileId
+export const rejectCaregiver = async (req: Request, res: Response) => {
+  try {
+    const profileId = req.params.profileId as string;
+    const profile = await prisma.profile.update({ 
+      where: { id: profileId }, 
+      data: { kycStatus: 'REJECTED' },
+      include: { user: true }
+    });
+
+    const fullName = `${profile.firstName} ${profile.lastName}`;
+
+    await prisma.auditLog.create({
+      data: { action: 'CAREGIVER_REJECTED', userId: req.user?.id, details: `Rejected caregiver profile for ${fullName} (${profile.user.email})` }
+    });
+
+    await prisma.auditLog.create({
+      data: { action: 'PROFILE_REJECTED', userId: profile.userId, details: `Your professional profile was rejected.` }
+    });
+
+    await NotificationService.send(
+      profile.userId,
+      'Profile Rejected',
+      'There was an issue with your profile verification documents. Please update them and resubmit.'
+    );
+
+    res.json({ message: 'Caregiver rejected' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to reject caregiver' });
   }
 };
 
@@ -123,7 +171,7 @@ export const getPendingBookingRequests = async (req: Request, res: Response) => 
       }
     });
 
-    const result = bookings.map(b => ({
+    const result = bookings.map((b: any) => ({
       bookingId: b.id,
       status: b.status,
       serviceDate: b.serviceDate,
@@ -181,6 +229,18 @@ export const reviewBookingRequest = async (req: Request, res: Response) => {
       data: { action: `BOOKING_${newStatus}`, userId: booking.caregiverId, details: `Admin ${action}d your booking with ${clientName}` }
     });
 
+    // Send Notifications
+    await NotificationService.send(
+      booking.clientId,
+      `Booking ${action === 'approve' ? 'Approved' : 'Rejected'}`,
+      `Your booking with ${caregiverName} has been ${action}d by the Administration.`
+    );
+    await NotificationService.send(
+      booking.caregiverId,
+      `Booking ${action === 'approve' ? 'Approved' : 'Rejected'}`,
+      `Your booking with ${clientName} has been ${action}d by the Administration.`
+    );
+
     res.json({ message: `Booking ${action}d` });
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to review booking' });
@@ -197,7 +257,7 @@ export const getAllComplaints = async (req: Request, res: Response) => {
       }
     });
 
-    const result = complaints.map(c => ({
+    const result = complaints.map((c: any) => ({
       id: c.id,
       description: c.description,
       status: c.status,
@@ -231,6 +291,16 @@ export const replyToComplaint = async (req: Request, res: Response) => {
     await prisma.auditLog.create({
       data: { action: 'COMPLAINT_REPLIED', userId: req.user?.id, details: `Replied to complaint ${id}` }
     });
+
+    // We need the complaint to get the client ID to notify them
+    const complaint = await prisma.complaint.findUnique({ where: { id } });
+    if (complaint) {
+      await NotificationService.send(
+        complaint.clientId,
+        'Update on your Complaint',
+        'Admin has replied to your complaint. Please check the dashboard.'
+      );
+    }
 
     res.json({ message: 'Reply sent' });
   } catch (error: any) {

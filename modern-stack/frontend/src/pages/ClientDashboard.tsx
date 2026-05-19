@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useModal } from '../components/ModalContext';
 
-type Tab = 'dashboard' | 'search' | 'bookings' | 'history' | 'complaints' | 'profile';
+type Tab = 'dashboard' | 'search' | 'bookings' | 'history' | 'complaints' | 'profile' | 'notifications';
 
 export default function ClientDashboard() {
   const [tab, setTab] = useState<Tab>('dashboard');
@@ -12,6 +12,7 @@ export default function ClientDashboard() {
   const [activeBookings, setActiveBookings] = useState<any[]>([]);
   const [historyBookings, setHistoryBookings] = useState<any[]>([]);
   const [complaints, setComplaints] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [bookingDate, setBookingDate] = useState('');
   const [complaintDesc, setComplaintDesc] = useState('');
@@ -28,6 +29,7 @@ export default function ClientDashboard() {
     if (!userId) { navigate('/login'); return; }
     loadProfile();
     loadActiveBookings();
+    loadNotifications();
   }, []);
 
   const changeTab = (newTab: Tab) => {
@@ -36,6 +38,7 @@ export default function ClientDashboard() {
     if (newTab === 'history') loadHistory();
     if (newTab === 'complaints') loadComplaints();
     if (newTab === 'bookings') loadActiveBookings();
+    if (newTab === 'notifications') loadNotifications();
   };
 
   const loadProfile = async () => {
@@ -69,6 +72,8 @@ export default function ClientDashboard() {
   const loadActiveBookings = async () => { try { setActiveBookings(await api.get(`/bookings/active/${userId}`)); } catch {} };
   const loadHistory = async () => { try { setHistoryBookings(await api.get(`/bookings/history/${userId}`)); } catch {} };
   const loadComplaints = async () => { try { setComplaints(await api.get(`/complaints/history/${userId}`)); } catch {} };
+  const loadNotifications = async () => { try { setNotifications(await api.get('/notifications')); } catch {} };
+  const markNotificationRead = async (id: string) => { try { await api.put(`/notifications/${id}/read`); loadNotifications(); } catch {} };
   const searchCaregivers = async () => { try { setCaregivers(await api.get(`/caregivers/search?profession=${searchQuery}`)); } catch {} };
 
   const handleBook = (caregiverId: string) => {
@@ -137,6 +142,7 @@ export default function ClientDashboard() {
     { key: 'bookings',   icon: '📅', label: 'Active Bookings' },
     { key: 'history',    icon: '📋', label: 'Booking History' },
     { key: 'complaints', icon: '📝', label: 'Complaints & Reviews' },
+    { key: 'notifications', icon: '🔔', label: 'Notifications' },
     { key: 'profile',    icon: '👤', label: 'My Profile' },
   ];
 
@@ -195,6 +201,11 @@ export default function ClientDashboard() {
                 <p>Your premium caregiving overview for today.</p>
               </div>
               <div className="stats-grid stagger">
+                <div className="stat-card glass-card" onClick={() => changeTab('notifications')} style={{ cursor: 'pointer' }}>
+                  <div className="stat-value">{notifications.filter(n => !n.isRead).length}</div>
+                  <div className="stat-label">Unread Notifications</div>
+                  <div style={{ position: 'absolute', right: 20, top: 20, fontSize: 36, opacity: 0.15 }}>🔔</div>
+                </div>
                 <div className="stat-card glass-card">
                   <div className="stat-value">{activeBookings.length}</div>
                   <div className="stat-label">Active Bookings</div>
@@ -410,6 +421,36 @@ export default function ClientDashboard() {
                     {complaints.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>You have not filed any complaints.</td></tr>}
                   </tbody>
                 </table>
+              </div>
+            </>
+          )}
+
+          {/* NOTIFICATIONS */}
+          {tab === 'notifications' && (
+            <>
+              <div className="page-header">
+                <h1>Notifications</h1>
+                <p>Stay updated on your bookings and account activities.</p>
+              </div>
+              <div className="stagger" style={{ display: 'grid', gap: 14 }}>
+                {notifications.map((n: any) => (
+                  <div key={n.id} className="glass-card-static" style={{ padding: '18px 22px', borderLeft: n.isRead ? '4px solid transparent' : '4px solid var(--accent-blue)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4, color: n.isRead ? 'var(--text-secondary)' : '#fff' }}>{n.title}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 6 }}>{n.message}</div>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{new Date(n.createdAt).toLocaleString()}</div>
+                    </div>
+                    {!n.isRead && (
+                      <button className="btn btn-ghost" onClick={() => markNotificationRead(n.id)} style={{ fontSize: 13, padding: '8px 16px' }}>Mark as Read</button>
+                    )}
+                  </div>
+                ))}
+                {notifications.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: 60, background: 'rgba(255,255,255,0.02)', borderRadius: 22, border: '1px dashed var(--border-glass-strong)' }}>
+                    <span style={{ fontSize: 40, marginBottom: 14, display: 'block' }}>📭</span>
+                    <h3 style={{ fontWeight: 700, color: 'var(--text-muted)' }}>No notifications yet</h3>
+                  </div>
+                )}
               </div>
             </>
           )}

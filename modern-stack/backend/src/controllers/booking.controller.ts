@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { NotificationService } from '../services/notification.service';
 
 const prisma = new PrismaClient();
 
@@ -28,6 +29,13 @@ export const createBooking = async (req: Request, res: Response) => {
       }
     });
 
+    // Notify Caregiver
+    await NotificationService.send(
+      caregiverId,
+      'New Booking Request',
+      `You have received a new booking request from ${client?.email || 'a client'}. Please review and accept/reject it.`
+    );
+
     res.status(201).json(booking);
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to create booking: ' + error.message });
@@ -45,7 +53,7 @@ export const getPendingBookings = async (req: Request, res: Response) => {
       }
     });
 
-    const result = bookings.map(b => ({
+    const result = bookings.map((b: any) => ({
       bookingId: b.id,
       clientName: b.client.profile ? `${b.client.profile.firstName} ${b.client.profile.lastName}` : 'Unknown',
       clientPhone: b.client.phone || 'N/A',
@@ -80,6 +88,13 @@ export const acceptBooking = async (req: Request, res: Response) => {
       }
     });
 
+    // Notify Client
+    await NotificationService.send(
+      booking.clientId,
+      'Booking Accepted by Caregiver',
+      `Your booking request has been accepted by ${caregiver?.email || 'the caregiver'}. It is now awaiting Admin approval.`
+    );
+
     res.json(booking);
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to accept booking' });
@@ -105,6 +120,13 @@ export const rejectBooking = async (req: Request, res: Response) => {
         details: `Caregiver ${caregiver?.email || booking.caregiverId} rejected booking request from Client: ${clientName}`
       }
     });
+
+    // Notify Client
+    await NotificationService.send(
+      booking.clientId,
+      'Booking Rejected',
+      `Unfortunately, your booking request has been rejected by ${caregiver?.email || 'the caregiver'}.`
+    );
 
     res.json(booking);
   } catch (error: any) {
@@ -151,7 +173,7 @@ export const getCaregiverHistory = async (req: Request, res: Response) => {
       orderBy: { serviceDate: 'desc' }
     });
 
-    const result = bookings.map(b => ({
+    const result = bookings.map((b: any) => ({
       bookingId: b.id,
       caregiverId: b.caregiverId,
       caregiverName: 'Me',
@@ -180,7 +202,7 @@ export const getCaregiverAccepted = async (req: Request, res: Response) => {
       include: { client: { include: { profile: true } } }
     });
 
-    const result = bookings.map(b => ({
+    const result = bookings.map((b: any) => ({
       bookingId: b.id,
       caregiverId: b.caregiverId,
       caregiverName: 'Me',
@@ -213,7 +235,7 @@ export const getClientActiveBookings = async (req: Request, res: Response) => {
       include: { caregiver: { include: { profile: true } } }
     });
 
-    const result = bookings.map(b => ({
+    const result = bookings.map((b: any) => ({
       bookingId: b.id,
       caregiverId: b.caregiverId,
       caregiverName: b.caregiver.profile ? `${b.caregiver.profile.firstName} ${b.caregiver.profile.lastName}` : 'Unknown',
@@ -239,7 +261,7 @@ export const getClientHistory = async (req: Request, res: Response) => {
       orderBy: { serviceDate: 'desc' }
     });
 
-    const result = bookings.map(b => ({
+    const result = bookings.map((b: any) => ({
       bookingId: b.id,
       caregiverId: b.caregiverId,
       caregiverName: b.caregiver.profile ? `${b.caregiver.profile.firstName} ${b.caregiver.profile.lastName}` : 'Unknown',

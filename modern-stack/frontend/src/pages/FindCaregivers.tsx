@@ -17,11 +17,6 @@ export default function FindCaregivers() {
   const navigate = useNavigate();
   const { showError, showModal } = useModal();
 
-  useEffect(() => {
-    loadCaregivers();
-    loadProfessions();
-  }, []);
-
   const loadCaregivers = async () => {
     setLoading(true);
     try { setCaregivers(await api.get('/caregivers')); }
@@ -34,12 +29,17 @@ export default function FindCaregivers() {
     catch (e) { console.error(e); }
   };
 
+  useEffect(() => {
+    loadCaregivers();
+    loadProfessions();
+  }, []);
+
   const handleSearch = async () => {
     try {
       setLoading(true);
       const data = await api.get(`/caregivers/search?profession=${searchQuery}`);
       setCaregivers(data);
-    } catch (e: any) { showError('Search Failed', e.message); }
+    } catch (e: unknown) { showError('Search Failed', (e as Error).message); }
     finally { setLoading(false); }
   };
 
@@ -53,7 +53,7 @@ export default function FindCaregivers() {
       if (filter.day) params.append('day', filter.day);
       setCaregivers(await api.get(`/caregivers/filter?${params}`));
       setShowFilterModal(false);
-    } catch (e: any) { showError('Filter Failed', e.message); }
+    } catch (e: unknown) { showError('Filter Failed', (e as Error).message); }
     finally { setLoading(false); }
   };
 

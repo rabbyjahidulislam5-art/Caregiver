@@ -37,7 +37,7 @@ export const getAllComplaints = async (req: Request, res: Response) => {
       }
     });
 
-    const result = complaints.map(c => ({
+    const result = complaints.map((c: any) => ({
       id: c.id,
       clientId: c.clientId,
       clientName: c.client.profile ? `${c.client.profile.firstName} ${c.client.profile.lastName}` : 'Unknown',
@@ -71,7 +71,7 @@ export const getClientComplaints = async (req: Request, res: Response) => {
       }
     });
 
-    const result = complaints.map(c => ({
+    const result = complaints.map((c: any) => ({
       id: c.id,
       clientId: c.clientId,
       clientName: c.client.profile ? `${c.client.profile.firstName} ${c.client.profile.lastName}` : 'Unknown',
